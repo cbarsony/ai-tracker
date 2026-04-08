@@ -1,0 +1,51 @@
+body {
+  font-family: monospace;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  display: flex;
+  justify-content: center;
+  padding-top: 80px;
+}
+
+.container {
+  border: 1px solid #444;
+  padding: 24px 32px;
+  border-radius: 4px;
+  background: #16213e;
+}
+
+h1 {
+  font-size: 16px;
+  margin: 0 0 16px;
+}
+
+.sample-name {
+  margin: 0 0 12px;
+  color: #aaa;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+select, button {
+  font-family: monospace;
+  font-size: 14px;
+  padding: 4px 8px;
+  background: #0f3460;
+  color: #e0e0e0;
+  border: 1px solid #555;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1a5276;
+}
+
+#status {
+  color: #53c653;
+}
