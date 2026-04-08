@@ -351,7 +351,7 @@ human:
 
 	I thought, it will be a good candidate to import AI features into a node backend. But I don't have too big knowledge about it, so maybe you can suggest better alternative.
 
-	Frontend tech stack is vanilla js, no dependency, but modern web features.
+	Frontend tech stack is vanilla js, no dependency, but modern web features. **Important!** Use state machine / statechart to orchestrate stateful logic on frontend! (If it fits for backend, why not there, too?) I like XState, but I don't want this dependency, so a simple, own statechart implementation should be used (expert statechart tools are NOT required like hierarchical states, history state etc.)
 
 	Should use song structure, which means multiple patterns, like in FastTracker 2.
 
