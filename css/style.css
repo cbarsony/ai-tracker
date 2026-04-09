@@ -19,11 +19,6 @@ h1 {
   margin: 0 0 16px;
 }
 
-.sample-name {
-  margin: 0 0 12px;
-  color: #aaa;
-}
-
 .controls {
   display: flex;
   align-items: center;
@@ -46,6 +41,14 @@ button:hover {
   background: #1a5276;
 }
 
-#status {
+.channel-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.channel-status span span {
   color: #53c653;
 }

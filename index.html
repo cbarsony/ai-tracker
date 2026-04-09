@@ -3,20 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Tracker — Phase 1 Prototype</title>
+  <title>AI Tracker — Phase 2 Prototype</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div class="container">
-    <h1>AI Tracker — Phase 1 Prototype</h1>
-    <p class="sample-name">Sample: Square Wave</p>
+    <h1>AI Tracker — Phase 2 Prototype</h1>
+    <div class="controls">
+      <label for="channel-select">Channel:</label>
+      <select id="channel-select"></select>
+    </div>
+    <div class="controls">
+      <label for="sample-select">Sample:</label>
+      <select id="sample-select"></select>
+    </div>
     <div class="controls">
       <label for="note-select">Note:</label>
       <select id="note-select"></select>
+    </div>
+    <div class="controls">
       <button id="play-btn">&#9654; Play</button>
       <button id="stop-btn">&#9632; Stop</button>
+      <button id="stop-all-btn">&#9632; Stop All</button>
     </div>
-    <p>Status: <span id="status">idle</span></p>
+    <div class="channel-status">
+      <span>Ch 0: <span id="status-0">idle</span></span>
+      <span>Ch 1: <span id="status-1">idle</span></span>
+      <span>Ch 2: <span id="status-2">idle</span></span>
+      <span>Ch 3: <span id="status-3">idle</span></span>
+    </div>
   </div>
   <script type="module" src="js/main.js"></script>
 </body>
