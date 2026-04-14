@@ -1,36 +1,36 @@
-import { NOTE_NAMES } from "./note-util.js";
-import { init, playNote, stopNote, getState } from "./audio-engine.js";
+import { initGrid, togglePlay, getState, setBpm, getOctave, setOctave } from "./grid-editor.js";
 
-const noteSelect = document.getElementById("note-select");
+const canvas = document.getElementById("grid-canvas");
+const bpmInput = document.getElementById("bpm");
 const playBtn = document.getElementById("play-btn");
-const stopBtn = document.getElementById("stop-btn");
 const statusEl = document.getElementById("status");
+const octEl = document.getElementById("oct");
 
-// Populate note selector
-for (const name of NOTE_NAMES) {
-  const option = document.createElement("option");
-  option.value = name;
-  option.textContent = name;
-  if (name === "C-4") option.selected = true;
-  noteSelect.appendChild(option);
+let audioCtx = null;
+
+function getAudioContext() {
+  if (!audioCtx) audioCtx = new AudioContext();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
 }
 
-let initialized = false;
-
-function updateStatus() {
-  statusEl.textContent = getState();
+function updateUI() {
+  const st = getState();
+  statusEl.textContent = st;
+  playBtn.textContent = st === "playing" ? "\u25A0 Stop" : "\u25B6 Play";
+  octEl.textContent = getOctave();
 }
+
+initGrid(canvas, { getAudioContext, onChange: updateUI });
 
 playBtn.addEventListener("click", () => {
-  if (!initialized) {
-    init();
-    initialized = true;
-  }
-  playNote("00", noteSelect.value);
-  updateStatus();
+  togglePlay();
+  updateUI();
+  canvas.focus();
 });
 
-stopBtn.addEventListener("click", () => {
-  stopNote();
-  updateStatus();
+bpmInput.addEventListener("input", () => {
+  setBpm(parseInt(bpmInput.value, 10) || 120);
 });
+
+updateUI();

@@ -3,20 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Tracker — Phase 1 Prototype</title>
+  <title>AI Tracker — Grid Editor</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div class="container">
-    <h1>AI Tracker — Phase 1 Prototype</h1>
-    <p class="sample-name">Sample: Square Wave</p>
-    <div class="controls">
-      <label for="note-select">Note:</label>
-      <select id="note-select"></select>
-      <button id="play-btn">&#9654; Play</button>
-      <button id="stop-btn">&#9632; Stop</button>
+    <h1>AI Tracker — Grid Editor</h1>
+    <div class="editor-wrap">
+      <canvas id="grid-canvas"></canvas>
+      <div class="panel">
+        <div class="ctrl">
+          <label for="bpm">BPM</label>
+          <input type="number" id="bpm" value="120" min="30" max="300" step="1">
+        </div>
+        <div class="ctrl">
+          <label>Octave</label>
+          <span id="oct" class="value">4</span>
+        </div>
+        <button id="play-btn">&#9654; Play</button>
+        <p class="status">Status: <span id="status">stopped</span></p>
+        <div class="help">
+          <p><b>Keyboard</b></p>
+          <p>Z&ndash;M &nbsp; notes (C&ndash;B)</p>
+          <p>Q&ndash;U &nbsp; notes +1 oct</p>
+          <p>&uarr;&darr; &nbsp;&nbsp;&nbsp; move cursor</p>
+          <p>Del &nbsp;&nbsp; clear note</p>
+          <p>+/&minus; &nbsp;&nbsp; octave up/down</p>
+          <p>Space &nbsp; play / stop</p>
+        </div>
+      </div>
     </div>
-    <p>Status: <span id="status">idle</span></p>
   </div>
   <script type="module" src="js/main.js"></script>
 </body>
