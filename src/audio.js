@@ -1,7 +1,7 @@
+import { NOTE_OFF } from "./cell.js";
 import { squareWave } from "./waveforms.js";
 
 const SAMPLE_RATE = 44100;
-const SEMITONES = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 
 let audio = null;
 let sample = null;
@@ -33,13 +33,9 @@ export function initAudio() {
 // node so the caller can later schedule its `stop()` precisely. Returns
 // null if the context is gone or the cell is not a real note.
 export function startNoteAt(note, time) {
-  if (!audio || !note || note === "-") return null;
+  if (!audio || typeof note !== "number" || note === NOTE_OFF) return null;
 
-  const noteMidiKey =
-    (parseInt(note[2], 10) + 1) * 12 +
-    SEMITONES[note[0]] +
-    (note[1] === "#" ? 1 : 0);
-  const freq = 440 * 2 ** ((noteMidiKey - 69) / 12);
+  const freq = 440 * 2 ** ((note - 69) / 12);
 
   const source = audio.createBufferSource();
   source.buffer = sample;

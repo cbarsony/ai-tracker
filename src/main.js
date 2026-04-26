@@ -8,6 +8,7 @@ import {
   stopPlay,
   stopSourceAt,
 } from "./audio.js";
+import { NOTE_OFF } from "./cell.js";
 
 const TIMER_INTERVAL = 25; // ms between scheduler ticks
 const SCHEDULE_AHEAD_TIME = 0.1; // seconds of audio scheduled in advance
@@ -15,15 +16,16 @@ const BPM = 120;
 const ROWS_PER_BEAT = 4;
 const ROW_DURATION = 60 / BPM / ROWS_PER_BEAT; // seconds per row
 
+// MIDI note numbers: C-1 = 0, A4 = 69, C4 = 60, C5 = 72, etc.
 const pattern = [
-  new Cell("C-4", 1),
-  new Cell(null), // sustain previous note
-  new Cell("E-4", 1),
-  new Cell("-"), // note-off
-  new Cell("G-4", 1),
-  new Cell(null), // sustain
-  new Cell(null), // sustain
-  new Cell("C-5", 1),
+  new Cell(60, 1),       // C4
+  new Cell(null),        // sustain previous note
+  new Cell(64, 1),       // E4
+  new Cell(NOTE_OFF),    // note-off
+  new Cell(67, 1),       // G4
+  new Cell(null),        // sustain
+  new Cell(null),        // sustain
+  new Cell(72, 1),       // C5
 ];
 
 // Scheduler state — when the next row should sound, and which row it is.
@@ -86,10 +88,10 @@ playBtn.addEventListener("click", async () => {
 // or at very high tempos.
 //
 // Sustain semantics (tracker convention):
-//   * empty cell  (note === null)  → keep the active note ringing
-//   * real note   ("C-4", "F#5"…)  → stop active note at this row's start,
-//                                     start the new note at the same time
-//   * note-off    ("-")            → stop active note at this row's start
+//   * empty cell  (note === null)     → keep the active note ringing
+//   * real note   (MIDI number 0..127) → stop active note at this row's start,
+//                                         start the new note at the same time
+//   * note-off    (NOTE_OFF)          → stop active note at this row's start
 function scheduler(scheduleUntil) {
   while (nextRowTime < scheduleUntil) {
     const cell = pattern[nextRowIndex];
@@ -104,7 +106,7 @@ function scheduler(scheduleUntil) {
         stopSourceAt(activeSource, nextRowTime);
         activeSource = null;
       }
-      if (note !== "-") {
+      if (note !== NOTE_OFF) {
         activeSource = startNoteAt(note, nextRowTime);
       }
     }
@@ -144,10 +146,10 @@ function draw() {
 function renderGrid(now, rowStartTime) {
   const cell = pattern[currentRow];
   let note;
-  if (cell.note === null) note = "···";
-  else if (cell.note === "-") note = "---";
-  else note = cell.note;
-  const inst = cell.instrument == null ? "··" : String(cell.instrument).padStart(2, "0");
+  if (cell.note === null) note = "   ";
+  else if (cell.note === NOTE_OFF) note = "---";
+  else note = String(cell.note).padStart(3, "0");
+  const inst = cell.instrument == null ? "  " : String(cell.instrument).padStart(2, "0");
   console.log(
     `row ${String(currentRow).padStart(2, "0")}  ${note.padEnd(4, " ")} ${inst}  ` +
       `t=${now.toFixed(3)}s  row-start=${rowStartTime.toFixed(3)}s`,
