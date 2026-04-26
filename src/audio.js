@@ -1,26 +1,21 @@
 import { squareWave } from "./waveforms.js";
 
 const SAMPLE_RATE = 44100;
+const SEMITONES = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 
-let intervalId = null;
 let audio = null;
 let sample = null;
+let timerId = null;
 
 export function isPlaying() {
-  return intervalId !== null;
+  return timerId !== null;
 }
 
-export function calculateCurrentRow({ bpm, rowsPerBeat, patternLength }) {
-  if (!audio || patternLength <= 0) {
-    return -1;
-  }
-
-  // Convert BPM (beats/min) to rows/sec, then map elapsed time to a row index.
-  const rowsPerSecond = (bpm * rowsPerBeat) / 60;
-  return Math.floor(audio.currentTime * rowsPerSecond) % patternLength;
+export function getAudioTime() {
+  return audio ? audio.currentTime : 0;
 }
 
-function initAudio() {
+export function initAudio() {
   if (audio) return;
 
   audio = new AudioContext();
@@ -34,36 +29,56 @@ function initAudio() {
   sample.copyToChannel(normalized, 0);
 }
 
-export function startPlay({ intervalTime, onSchedule }) {
-  initAudio();
-  onSchedule();
-  intervalId = setInterval(onSchedule, intervalTime);
-}
+// Start a looping note at the given AudioContext time. Returns the source
+// node so the caller can later schedule its `stop()` precisely. Returns
+// null if the context is gone or the cell is not a real note.
+export function startNoteAt(note, time) {
+  if (!audio || !note || note === "-") return null;
 
-const SEMITONES = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
-
-export function scheduleNote(note, delay) {
-  if (!audio || !note || note === "-") return;
   const noteMidiKey =
     (parseInt(note[2], 10) + 1) * 12 +
     SEMITONES[note[0]] +
     (note[1] === "#" ? 1 : 0);
   const freq = 440 * 2 ** ((noteMidiKey - 69) / 12);
 
-  const sound = audio.createBufferSource();
-  sound.buffer = sample;
-  sound.loop = true;
-  sound.playbackRate.value = freq / (SAMPLE_RATE / sample.length);
+  const source = audio.createBufferSource();
+  source.buffer = sample;
+  source.loop = true;
+  source.playbackRate.value = freq / (SAMPLE_RATE / sample.length);
 
-  sound.connect(audio.destination);
-  sound.start(delay);
-  sound.stop(audio.currentTime + 60 / 120 / 4); // one row duration
+  source.connect(audio.destination);
+  source.start(time);
+  return source;
+}
+
+// Schedule `source.stop()` at the given AudioContext time. Safe to call
+// with a null source (e.g. when there is nothing currently sounding).
+export function stopSourceAt(source, time) {
+  if (!audio || !source) return;
+  try {
+    source.stop(time);
+  } catch {
+    // Already stopped — nothing to do.
+  }
+}
+
+// Lookahead scheduler: every `timerInterval` ms, invoke
+// `onTick(scheduleUntil)` where
+//   scheduleUntil = audioContext.currentTime + scheduleAheadTime.
+// The caller is responsible for scheduling any events whose time falls
+// before `scheduleUntil` (typically inside a `while` loop).
+export function startScheduler({ scheduleAheadTime, timerInterval, onTick }) {
+  const tick = () => {
+    onTick(audio.currentTime + scheduleAheadTime);
+    timerId = setTimeout(tick, timerInterval);
+  };
+  tick();
 }
 
 export async function stopPlay() {
-  if (intervalId !== null) {
-    clearInterval(intervalId);
-    intervalId = null;
+  if (timerId !== null) {
+    clearTimeout(timerId);
+    timerId = null;
   }
 
   if (audio) {
@@ -71,8 +86,4 @@ export async function stopPlay() {
     audio = null;
     sample = null;
   }
-}
-
-export function getTime() {
-  return audio ? audio.currentTime : 0;
 }
