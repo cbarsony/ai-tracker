@@ -52,6 +52,30 @@ let currentRow = -1;
 let rafId = null;
 
 const playBtn = document.getElementById("play");
+const gridEl = document.getElementById("grid");
+
+// Build one <tr> per pattern row. Cells mirror the console layout:
+// row index, note (or "   "/"---"), instrument.
+const rowEls = pattern.map((cell, i) => {
+  const tr = document.createElement("tr");
+  tr.dataset.row = String(i);
+  tr.innerHTML =
+    `<td class="row-num">${String(i).padStart(2, "0")}</td>` +
+    `<td class="note">${formatNote(cell)}</td>` +
+    `<td class="inst">${formatInst(cell)}</td>`;
+  gridEl.appendChild(tr);
+  return tr;
+});
+
+function formatNote(cell) {
+  if (cell.note === null) return "   ";
+  if (cell.note === NOTE_OFF) return "---";
+  return String(cell.note).padStart(3, "0");
+}
+function formatInst(cell) {
+  return cell.instrument == null ? "  " : String(cell.instrument).padStart(2, "0");
+}
+
 playBtn.addEventListener("click", async () => {
   if (isPlaying()) {
     // stopPlay() clears the scheduler timeout *before* it closes the
@@ -68,6 +92,7 @@ playBtn.addEventListener("click", async () => {
     activeSource = null;
     playBtn.textContent = "Play";
     draw();
+    for (const tr of rowEls) tr.classList.remove("current");
   } else {
     initAudio();
     nextRowIndex = 0;
@@ -154,4 +179,8 @@ function renderGrid(now, rowStartTime) {
     `row ${String(currentRow).padStart(2, "0")}  ${note.padEnd(4, " ")} ${inst}  ` +
       `t=${now.toFixed(3)}s  row-start=${rowStartTime.toFixed(3)}s`,
   );
+
+  // Highlight the active row in the HTML grid.
+  for (const tr of rowEls) tr.classList.remove("current");
+  if (currentRow >= 0) rowEls[currentRow].classList.add("current");
 }

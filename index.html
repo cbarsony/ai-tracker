@@ -13,14 +13,30 @@
       }
       #grid {
         display: block;
+        width: 120px;
         margin-top: 12px;
         background: #0a0a1e;
+        border-collapse: collapse;
+        font-family: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+        font-size: 14px;
+      }
+      #grid td {
+        padding: 2px 10px;
+        border: 1px solid #222244;
+        white-space: pre;
+      }
+      #grid tr.current {
+        background: #3a3a6e;
+        color: #fff;
+      }
+      #grid td.row-num {
+        color: #888;
       }
     </style>
   </head>
   <body>
     <button id="play">Play</button>
-    <canvas id="grid"></canvas>
+    <table id="grid"></table>
     <script type="module" src="src/main.js"></script>
   </body>
 </html>
