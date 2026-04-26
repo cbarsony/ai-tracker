@@ -2,6 +2,7 @@ import { Cell } from "./cell.js";
 import {
   calculateCurrentRow,
   isPlaying,
+  playNote,
   startPlay,
   stopPlay,
 } from "./audio.js";
@@ -33,12 +34,20 @@ playBtn.addEventListener("click", async () => {
 });
 
 function schedule() {
-  currentRow = calculateCurrentRow({
+  const newCurrentRow = calculateCurrentRow({
     bpm: BPM,
     rowsPerBeat: ROWS_PER_BEAT,
     patternLength: pattern.length,
   });
-  console.log("Current row:", currentRow);
+  if (newCurrentRow !== currentRow) {
+    currentRow = newCurrentRow;
+    console.log(
+      `${currentRow} ${pattern[currentRow].note} ${pattern[currentRow].instrument}`,
+    );
+    playNote(pattern[currentRow].note);
+  } else {
+    console.log(currentRow);
+  }
 }
 
 function draw() {

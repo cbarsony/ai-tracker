@@ -40,6 +40,23 @@ export function startPlay({ intervalTime, onSchedule }) {
   intervalId = setInterval(onSchedule, intervalTime);
 }
 
+const SEMITONES = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+
+export function playNote(note) {
+  if (!audio || !note || note === "-") return;
+  const noteMidiKey = (parseInt(note[2], 10) + 1) * 12 + SEMITONES[note[0]] + (note[1] === "#" ? 1 : 0);
+  const freq = 440 * 2 ** ((noteMidiKey - 69) / 12);
+
+  const sound = audio.createBufferSource();
+  sound.buffer = sample;
+  sound.loop = true;
+  sound.playbackRate.value = freq / (SAMPLE_RATE / sample.length);
+  
+  sound.connect(audio.destination);
+  sound.start();
+  sound.stop(audio.currentTime + 60 / 120 / 4); // one row duration
+}
+
 export async function stopPlay() {
   if (intervalId !== null) {
     clearInterval(intervalId);
