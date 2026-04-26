@@ -140,33 +140,16 @@ function draw() {
   }
 }
 
-// Mimic a music tracker grid editor in the console: each non-playing row is
-// dim, the currently sounding row is highlighted with a `>` playhead, and a
-// header shows the important timing values.
+// Log a single line each time a new row starts playing.
 function renderGrid(now, rowStartTime) {
-  const pad2 = (n) => String(n).padStart(2, "0");
-  const f3 = (n) => n.toFixed(3);
-
-  console.clear();
+  const cell = pattern[currentRow];
+  let note;
+  if (cell.note === null) note = "···";
+  else if (cell.note === "-") note = "---";
+  else note = cell.note;
+  const inst = cell.instrument == null ? "··" : String(cell.instrument).padStart(2, "0");
   console.log(
-    `BPM ${BPM}   row ${ROW_DURATION.toFixed(4)}s   ` +
-      `t=${f3(now)}s   row-start=${f3(rowStartTime)}s   ` +
-      `next-sched=${f3(nextRowTime)}s   queued=${rowsInQueue.length}`,
+    `row ${String(currentRow).padStart(2, "0")}  ${note.padEnd(4, " ")} ${inst}  ` +
+      `t=${now.toFixed(3)}s  row-start=${rowStartTime.toFixed(3)}s`,
   );
-  console.log("┌─────┬──────┬──────┐");
-  console.log("│ Row │ Note │ Inst │");
-  console.log("├─────┼──────┼──────┤");
-  for (let i = 0; i < pattern.length; i++) {
-    const cell = pattern[i];
-    const marker = i === currentRow ? ">" : " ";
-    // Tracker convention: "···" = sustain (empty), "---" = note-off.
-    let note;
-    if (cell.note === null) note = "···";
-    else if (cell.note === "-") note = "---";
-    else note = cell.note;
-    note = note.padEnd(4, " ");
-    const inst = cell.instrument == null ? "··" : String(cell.instrument).padStart(2, "0");
-    console.log(`│${marker} ${pad2(i)} │ ${note} │  ${inst}  │`);
-  }
-  console.log("└─────┴──────┴──────┘");
 }
