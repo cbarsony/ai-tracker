@@ -1,5 +1,12 @@
 import { Cell, NOTE_OFF } from "./cell.js";
-import { squareWave, makeHihatBuffer, makeSnareBuffer } from "./waveforms.js";
+import {
+  makeBassWaveBuffer,
+  makeHihatBuffer,
+  makeKickBuffer,
+  makePadWaveBuffer,
+  makePluckBuffer,
+  makeSnareBuffer,
+} from "./waveforms.js";
 
 const SAMPLE_RATE = 44100;
 const BPM = 120;
@@ -12,29 +19,88 @@ let Audio = null;
 let Instruments = null;
 let TimerId = null;
 
-const pattern1 = [
-  new Cell(60, 1),
-  new Cell(62, 1),
-  new Cell(-1), // note off
-  new Cell(65, 1),
-  new Cell(67, 1),
-  new Cell(null), // sustain
-  new Cell(null), // sustain
-  new Cell(72, 1),
-];
+const PATTERN_LENGTH = 64;
 
-const pattern2 = [
-  new Cell(60, 2),
-  new Cell(-1),
-  new Cell(60, 2),
-  new Cell(-1),
-  new Cell(60, 3),
-  new Cell(null),
-  new Cell(60, 2),
-  new Cell(60, 2),
-];
+const INSTRUMENTS = {
+  KICK: 1,
+  SNARE: 2,
+  HIHAT: 3,
+  BASS: 4,
+  PLUCK: 5,
+  PAD: 6,
+};
 
-const tracks = [makeTrack(pattern1), makeTrack(pattern2)];
+const rest = () => new Cell(null);
+const off = () => new Cell(NOTE_OFF);
+const note = (midiNote, instrument) => new Cell(midiNote, instrument);
+
+const pattern1 = Array.from({ length: PATTERN_LENGTH }, (_, row) => {
+  const hits = [];
+
+  if (row % 16 === 0 || row % 16 === 8 || row === 30 || row === 46) {
+    hits.push(note(36, INSTRUMENTS.KICK));
+  }
+
+  if (row % 16 === 4 || row % 16 === 12) {
+    hits.push(note(38, INSTRUMENTS.SNARE));
+  }
+
+  if (row % 2 === 0) {
+    hits.push(note(42, INSTRUMENTS.HIHAT));
+  }
+
+  if (row % 16 === 15 || row === 63) {
+    hits.push(note(42, INSTRUMENTS.HIHAT));
+  }
+
+  return hits.length ? hits : rest();
+});
+
+const bassNotes = [
+  36, null, null, 36, 43, null, 46, null,
+  34, null, null, 34, 41, null, 43, null,
+  32, null, null, 32, 39, null, 43, null,
+  31, null, 31, null, 38, null, 43, 46,
+  36, null, 36, null, 43, null, 46, null,
+  34, null, 34, null, 41, null, 43, 46,
+  32, null, 32, null, 39, null, 43, null,
+  31, null, 31, null, 38, null, 43, 46,
+];
+const pattern2 = bassNotes.map((midiNote) =>
+  midiNote === null ? off() : note(midiNote, INSTRUMENTS.BASS),
+);
+
+const pluckNotes = [
+  72, null, 76, null, 79, null, 76, null,
+  70, null, 74, null, 77, null, 74, null,
+  67, null, 72, null, 75, null, 72, null,
+  67, null, 71, null, 74, null, 79, null,
+  72, null, 76, null, 79, null, 84, null,
+  70, null, 74, null, 77, null, 82, null,
+  67, null, 72, null, 75, null, 79, null,
+  67, null, 71, null, 74, null, 76, 79,
+];
+const pattern3 = pluckNotes.map((midiNote) =>
+  midiNote === null ? rest() : note(midiNote, INSTRUMENTS.PLUCK),
+);
+
+const pattern4 = Array.from({ length: PATTERN_LENGTH }, (_, row) => {
+  if (row === 0) return note(48, INSTRUMENTS.PAD);
+  if (row > 0 && row < 16) return rest();
+  if (row === 16) return note(46, INSTRUMENTS.PAD);
+  if (row > 16 && row < 32) return rest();
+  if (row === 32) return note(44, INSTRUMENTS.PAD);
+  if (row > 32 && row < 48) return rest();
+  if (row === 48) return note(43, INSTRUMENTS.PAD);
+  return rest();
+});
+
+const tracks = [
+  makeTrack(pattern1),
+  makeTrack(pattern2),
+  makeTrack(pattern3),
+  makeTrack(pattern4),
+];
 
 function makeTrack(pattern) {
   return {
@@ -95,7 +161,6 @@ function noteToFrequency(note) {
 }
 
 function schedulerTick() {
-  console.log("tick");
   for (const track of tracks) {
     while (track.nextRowTime < Audio.currentTime + SCHEDULE_AHEAD_TIME) {
       scheduleRow(track);
@@ -106,7 +171,15 @@ function schedulerTick() {
 }
 
 function scheduleRow(track) {
-  const cell = track.pattern[track.row];
+  const rowCells = track.pattern[track.row];
+  const cells = Array.isArray(rowCells) ? rowCells : [rowCells];
+
+  for (const cell of cells) {
+    scheduleCell(track, cell);
+  }
+}
+
+function scheduleCell(track, cell) {
   console.log(
     `t${Audio.currentTime.toFixed(3)} Row ${track.row}: ${cell.note}/${cell.instrument} (${track.nextRowTime.toFixed(3)})`,
   );
@@ -128,34 +201,50 @@ function scheduleRow(track) {
     return;
   }
 
+  const instrument = Instruments[cell.instrument];
+
   // New note: cut off the previous source and start a new one
-  if (track.currentSource) {
+  if (instrument.monophonic && track.currentSource) {
     track.currentSource.stop(track.nextRowTime);
   }
 
-  const instrument = Instruments[cell.instrument];
   const source = Audio.createBufferSource();
   source.buffer = instrument.buffer;
   source.loop = instrument.loop;
   if (instrument.pitched) {
     const freq = noteToFrequency(cell.note);
-    source.playbackRate.value =
-      freq / (SAMPLE_RATE / instrument.buffer.length);
+    const sourceBaseFrequency =
+      instrument.baseFrequency ?? SAMPLE_RATE / instrument.buffer.length;
+    source.playbackRate.value = freq / sourceBaseFrequency;
   }
   source.onended = () => {
     if (track.currentSource === source) track.currentSource = null;
   };
 
   const gainNode = Audio.createGain();
-  gainNode.gain.value = instrument.volume;
+  gainNode.gain.setValueAtTime(0, track.nextRowTime);
+  gainNode.gain.linearRampToValueAtTime(
+    instrument.volume,
+    track.nextRowTime + instrument.attack,
+  );
+  gainNode.gain.setValueAtTime(
+    instrument.volume,
+    track.nextRowTime + instrument.attack,
+  );
+  gainNode.gain.linearRampToValueAtTime(
+    0.0001,
+    track.nextRowTime + ROW_DURATION * instrument.durationRows,
+  );
   source.connect(gainNode);
   gainNode.connect(Audio.destination);
   source.start(track.nextRowTime);
 
-  track.currentSourceStopTime = track.nextRowTime + ROW_DURATION;
+  track.currentSourceStopTime = track.nextRowTime + ROW_DURATION * instrument.durationRows;
   source.stop(track.currentSourceStopTime);
 
-  track.currentSource = source;
+  if (instrument.monophonic) {
+    track.currentSource = source;
+  }
 }
 
 export function initAudio() {
@@ -163,17 +252,63 @@ export function initAudio() {
 
   Audio = new AudioContext();
 
-  // Instrument 1: square wave (pitched, looped)
-  const normalized = new Float32Array(squareWave.length);
-  for (let i = 0; i < squareWave.length; i++) {
-    normalized[i] = squareWave[i] / 128;
-  }
-  const squareBuffer = Audio.createBuffer(1, normalized.length, SAMPLE_RATE);
-  squareBuffer.copyToChannel(normalized, 0);
-
   Instruments = {
-    1: { buffer: squareBuffer, loop: true,  pitched: true,  volume: 0.05 },
-    2: { buffer: makeHihatBuffer(Audio), loop: false, pitched: false, volume: 0.2  },
-    3: { buffer: makeSnareBuffer(Audio), loop: false, pitched: false, volume: 0.1  },
+    [INSTRUMENTS.KICK]: {
+      buffer: makeKickBuffer(Audio),
+      loop: false,
+      pitched: false,
+      volume: 0.85,
+      attack: 0.001,
+      durationRows: 3,
+      monophonic: false,
+    },
+    [INSTRUMENTS.SNARE]: {
+      buffer: makeSnareBuffer(Audio),
+      loop: false,
+      pitched: false,
+      volume: 0.35,
+      attack: 0.001,
+      durationRows: 2,
+      monophonic: false,
+    },
+    [INSTRUMENTS.HIHAT]: {
+      buffer: makeHihatBuffer(Audio),
+      loop: false,
+      pitched: false,
+      volume: 0.18,
+      attack: 0.001,
+      durationRows: 1,
+      monophonic: false,
+    },
+    [INSTRUMENTS.BASS]: {
+      buffer: makeBassWaveBuffer(Audio),
+      loop: true,
+      pitched: true,
+      baseFrequency: 55,
+      volume: 0.22,
+      attack: 0.004,
+      durationRows: 2,
+      monophonic: true,
+    },
+    [INSTRUMENTS.PLUCK]: {
+      buffer: makePluckBuffer(Audio),
+      loop: false,
+      pitched: true,
+      baseFrequency: 440,
+      volume: 0.18,
+      attack: 0.001,
+      durationRows: 2,
+      monophonic: false,
+    },
+    [INSTRUMENTS.PAD]: {
+      buffer: makePadWaveBuffer(Audio),
+      loop: true,
+      pitched: true,
+      baseFrequency: 55,
+      volume: 0.1,
+      attack: 0.08,
+      durationRows: 16,
+      monophonic: true,
+    },
   };
 }
