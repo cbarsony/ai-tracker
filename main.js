@@ -2,7 +2,8 @@ import { Cell, NOTE_OFF } from "./cell.js";
 import { squareWave } from "./waveforms.js";
 
 const SAMPLE_RATE = 44100;
-const ROW_DURATION = 0.2;
+const BPM = 120;
+const ROWS_PER_BEAT = 4;
 const LOOKAHEAD = 25;
 const SCHEDULE_AHEAD_TIME = 0.1;
 
@@ -44,7 +45,7 @@ function schedulerTick() {
   console.log(`schedulerTick at: ${Audio.currentTime.toFixed(3)}`);
   while (NextRowTime < Audio.currentTime + SCHEDULE_AHEAD_TIME) {
     scheduleRow();
-    NextRowTime += ROW_DURATION;
+    NextRowTime += 60 / (BPM * ROWS_PER_BEAT);
     Row = (Row + 1) % pattern.length;
   }
 }
@@ -66,7 +67,7 @@ function scheduleRow() {
   if (cell.note === null) {
     // Sustain: extend the current source's stop time
     if (CurrentSource) {
-      CurrentSourceStopTime += ROW_DURATION;
+      CurrentSourceStopTime += 60 / (BPM * ROWS_PER_BEAT);
       CurrentSource.stop(CurrentSourceStopTime);
     }
     return;
@@ -89,7 +90,7 @@ function scheduleRow() {
   source.connect(Audio.destination);
   source.start(NextRowTime);
 
-  CurrentSourceStopTime = NextRowTime + ROW_DURATION;
+  CurrentSourceStopTime = NextRowTime + 60 / (BPM * ROWS_PER_BEAT);
   source.stop(CurrentSourceStopTime);
 
   CurrentSource = source;
