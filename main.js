@@ -41,11 +41,8 @@ function noteToFrequency(note) {
 }
 
 function schedulerTick() {
-  console.log(`schedulerTick at: ${Audio.currentTime}`);
+  console.log(`schedulerTick at: ${Audio.currentTime.toFixed(3)}`);
   while (NextRowTime < Audio.currentTime + SCHEDULE_AHEAD_TIME) {
-    console.log(
-      `while at: ${Audio.currentTime}, nextRowTime: ${NextRowTime} current + schedule ahead: ${Audio.currentTime + SCHEDULE_AHEAD_TIME}`,
-    );
     scheduleRow();
     NextRowTime += ROW_DURATION;
     Row = (Row + 1) % pattern.length;
@@ -54,7 +51,9 @@ function schedulerTick() {
 
 function scheduleRow() {
   const cell = pattern[Row];
-  console.log(`Row ${Row}: ${cell.note}`);
+  console.log(
+    `Row ${Row}: ${cell.note} (${NextRowTime.toFixed(3)}) at: ${Audio.currentTime.toFixed(3)}`,
+  );
 
   if (cell.note === NOTE_OFF) {
     if (CurrentSource) {
