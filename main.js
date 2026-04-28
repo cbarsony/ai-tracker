@@ -1,32 +1,14 @@
+import { Cell, NOTE_OFF } from "./cell.js";
 import { squareWave } from "./waveforms.js";
 
-const NOTE_OFF = -1;
 const SAMPLE_RATE = 44100;
+const NOTE_DURATION = 0.2;
 
-export class Cell {
-  /**
-   * Represents a single cell in the tracker.
-   *
-   * @param {number|null} note The MIDI note number or null for no note. 0 - 127, or -1 for NOTE_OFF.
-   * @param {number|null} instrument The instrument number or null for no instrument.
-   */
-  constructor(note, instrument) {
-    const isRealNote = typeof note === "number" && note !== NOTE_OFF;
-    if (isRealNote && !instrument) {
-      throw new Error("Note without instrument");
-    }
-
-    this.note = note ?? null;
-    this.instrument = instrument || null;
-  }
-}
-
-let audio = null;
-let sample = null;
-let row = 0;
-let nextNoteTime = 0;
-let timerId = null;
-const noteDuration = 0.5;
+let Audio = null;
+let Sample = null;
+let Row = 0;
+let NextNoteTime = 0;
+let TimerId = null;
 
 const pattern = [
   new Cell(60, 1),
@@ -39,16 +21,14 @@ const pattern = [
   new Cell(72, 1),
 ];
 
-const playBtn = document.getElementById("play");
-
-playBtn.addEventListener("click", async () => {
+document.getElementById("play").addEventListener("click", async () => {
   initAudio();
 
-  if (timerId) return;
+  if (TimerId) return;
 
-  nextNoteTime = audio.currentTime;
+  NextNoteTime = Audio.currentTime;
   scheduleOneNote();
-  timerId = setInterval(scheduleOneNote, noteDuration * 1000);
+  TimerId = setInterval(scheduleOneNote, NOTE_DURATION * 1000);
 });
 
 function noteToFrequency(note) {
@@ -57,33 +37,33 @@ function noteToFrequency(note) {
 
 function scheduleOneNote() {
   playRow();
-  nextNoteTime += noteDuration;
-  row = (row + 1) % pattern.length;
+  NextNoteTime += NOTE_DURATION;
+  Row = (Row + 1) % pattern.length;
 }
 
 function playRow() {
-  const freq = noteToFrequency(pattern[row % pattern.length].note);
+  const freq = noteToFrequency(pattern[Row % pattern.length].note);
 
-  const source = audio.createBufferSource();
-  source.buffer = sample;
+  const source = Audio.createBufferSource();
+  source.buffer = Sample;
   source.loop = true;
-  source.playbackRate.value = freq / (SAMPLE_RATE / sample.length);
+  source.playbackRate.value = freq / (SAMPLE_RATE / Sample.length);
 
-  source.connect(audio.destination);
-  source.start(nextNoteTime);
-  source.stop(nextNoteTime + noteDuration);
+  source.connect(Audio.destination);
+  source.start(NextNoteTime);
+  source.stop(NextNoteTime + NOTE_DURATION);
 }
 
 export function initAudio() {
-  if (audio) return;
+  if (Audio) return;
 
-  audio = new AudioContext();
+  Audio = new AudioContext();
   const normalized = new Float32Array(squareWave.length);
 
   for (let i = 0; i < squareWave.length; i++) {
     normalized[i] = squareWave[i] / 128;
   }
 
-  sample = audio.createBuffer(1, normalized.length, SAMPLE_RATE);
-  sample.copyToChannel(normalized, 0);
+  Sample = Audio.createBuffer(1, normalized.length, SAMPLE_RATE);
+  Sample.copyToChannel(normalized, 0);
 }
