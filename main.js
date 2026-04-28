@@ -1,4 +1,3 @@
-import { Cell, NOTE_OFF } from "./cell.js";
 import {
   makeBassWaveBuffer,
   makeHihatBuffer,
@@ -7,109 +6,72 @@ import {
   makePluckBuffer,
   makeSnareBuffer,
 } from "./waveforms.js";
+import { SONG } from "./song1.js";
+
+const NOTE_OFF = -1;
+const EMPTY_CELL = "---|--";
 
 const SAMPLE_RATE = 44100;
-const BPM = 120;
-const ROWS_PER_BEAT = 4;
 const LOOKAHEAD = 25;
 const SCHEDULE_AHEAD_TIME = 0.1;
-const ROW_DURATION = 60 / (BPM * ROWS_PER_BEAT);
+const ROW_DURATION = 60 / (SONG.bpm * SONG.rowsPerBeat);
+
+const BUFFER_FACTORIES = {
+  kick: makeKickBuffer,
+  snare: makeSnareBuffer,
+  hihat: makeHihatBuffer,
+  bass: makeBassWaveBuffer,
+  pluck: makePluckBuffer,
+  pad: makePadWaveBuffer,
+};
+
+const SEMITONES = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 
 let Audio = null;
 let Instruments = null;
 let TimerId = null;
 
-const PATTERN_LENGTH = 64;
+const tracks = buildTracks(SONG);
 
-const INSTRUMENTS = {
-  KICK: 1,
-  SNARE: 2,
-  HIHAT: 3,
-  BASS: 4,
-  PLUCK: 5,
-  PAD: 6,
-};
+function buildTracks(song) {
+  const channelCount = song.channels.length;
 
-const rest = () => new Cell(null);
-const off = () => new Cell(NOTE_OFF);
-const note = (midiNote, instrument) => new Cell(midiNote, instrument);
+  return song.channels.map((name, channelIndex) => {
+    const rows = Array.from({ length: song.patternLength }, (_, rowIndex) => {
+      const cellText =
+        song.pattern[rowIndex * channelCount + channelIndex] ?? EMPTY_CELL;
+      return parseCell(cellText);
+    });
 
-const pattern1 = Array.from({ length: PATTERN_LENGTH }, (_, row) => {
-  const hits = [];
+    return {
+      name,
+      rows,
+      row: 0,
+      nextRowTime: 0,
+      currentSource: null,
+      currentSourceStopTime: 0,
+    };
+  });
+}
 
-  if (row % 16 === 0 || row % 16 === 8 || row === 30 || row === 46) {
-    hits.push(note(36, INSTRUMENTS.KICK));
-  }
+function parseCell(cellText) {
+  const [noteText, instrumentText] = cellText.split("|");
+  const instrument =
+    instrumentText && instrumentText !== "--" ? instrumentText : null;
 
-  if (row % 16 === 4 || row % 16 === 12) {
-    hits.push(note(38, INSTRUMENTS.SNARE));
-  }
+  if (noteText === "---") return { note: null, instrument: null };
+  if (noteText === "===") return { note: NOTE_OFF, instrument: null };
 
-  if (row % 2 === 0) {
-    hits.push(note(42, INSTRUMENTS.HIHAT));
-  }
+  return { note: noteTextToMidi(noteText), instrument };
+}
 
-  if (row % 16 === 15 || row === 63) {
-    hits.push(note(42, INSTRUMENTS.HIHAT));
-  }
+function noteTextToMidi(noteText) {
+  const match = /^([A-G])([#-])(\d)$/.exec(noteText);
+  if (!match) throw new Error(`Invalid note: ${noteText}`);
 
-  return hits.length ? hits : rest();
-});
-
-const bassNotes = [
-  36, null, null, 36, 43, null, 46, null,
-  34, null, null, 34, 41, null, 43, null,
-  32, null, null, 32, 39, null, 43, null,
-  31, null, 31, null, 38, null, 43, 46,
-  36, null, 36, null, 43, null, 46, null,
-  34, null, 34, null, 41, null, 43, 46,
-  32, null, 32, null, 39, null, 43, null,
-  31, null, 31, null, 38, null, 43, 46,
-];
-const pattern2 = bassNotes.map((midiNote) =>
-  midiNote === null ? off() : note(midiNote, INSTRUMENTS.BASS),
-);
-
-const pluckNotes = [
-  72, null, 76, null, 79, null, 76, null,
-  70, null, 74, null, 77, null, 74, null,
-  67, null, 72, null, 75, null, 72, null,
-  67, null, 71, null, 74, null, 79, null,
-  72, null, 76, null, 79, null, 84, null,
-  70, null, 74, null, 77, null, 82, null,
-  67, null, 72, null, 75, null, 79, null,
-  67, null, 71, null, 74, null, 76, 79,
-];
-const pattern3 = pluckNotes.map((midiNote) =>
-  midiNote === null ? rest() : note(midiNote, INSTRUMENTS.PLUCK),
-);
-
-const pattern4 = Array.from({ length: PATTERN_LENGTH }, (_, row) => {
-  if (row === 0) return note(48, INSTRUMENTS.PAD);
-  if (row > 0 && row < 16) return rest();
-  if (row === 16) return note(46, INSTRUMENTS.PAD);
-  if (row > 16 && row < 32) return rest();
-  if (row === 32) return note(44, INSTRUMENTS.PAD);
-  if (row > 32 && row < 48) return rest();
-  if (row === 48) return note(43, INSTRUMENTS.PAD);
-  return rest();
-});
-
-const tracks = [
-  makeTrack(pattern1),
-  makeTrack(pattern2),
-  makeTrack(pattern3),
-  makeTrack(pattern4),
-];
-
-function makeTrack(pattern) {
-  return {
-    pattern,
-    row: 0,
-    nextRowTime: 0,
-    currentSource: null,
-    currentSourceStopTime: 0,
-  };
+  const [, name, accidental, octaveText] = match;
+  const sharp = accidental === "#" ? 1 : 0;
+  return (Number(octaveText) + 1) * 12 + SEMITONES[name] + sharp;
 }
 
 const playButton = document.getElementById("play");
@@ -123,7 +85,7 @@ playButton.addEventListener("click", async () => {
 
 async function start() {
   initAudio();
-  await Audio.resume(); // ensure context is running before scheduling
+  await Audio.resume();
 
   const startTime = Audio.currentTime;
   for (const track of tracks) {
@@ -165,23 +127,16 @@ function schedulerTick() {
     while (track.nextRowTime < Audio.currentTime + SCHEDULE_AHEAD_TIME) {
       scheduleRow(track);
       track.nextRowTime += ROW_DURATION;
-      track.row = (track.row + 1) % track.pattern.length;
+      track.row = (track.row + 1) % track.rows.length;
     }
   }
 }
 
 function scheduleRow(track) {
-  const rowCells = track.pattern[track.row];
-  const cells = Array.isArray(rowCells) ? rowCells : [rowCells];
+  const cell = track.rows[track.row];
 
-  for (const cell of cells) {
-    scheduleCell(track, cell);
-  }
-}
-
-function scheduleCell(track, cell) {
   console.log(
-    `t${Audio.currentTime.toFixed(3)} Row ${track.row}: ${cell.note}/${cell.instrument} (${track.nextRowTime.toFixed(3)})`,
+    `t${Audio.currentTime.toFixed(3)} ${track.name} row ${track.row}: ${cell.note}/${cell.instrument} (${track.nextRowTime.toFixed(3)})`,
   );
 
   if (cell.note === NOTE_OFF) {
@@ -193,18 +148,17 @@ function scheduleCell(track, cell) {
   }
 
   if (cell.note === null) {
-    // Sustain: extend the current source's stop time
-    if (track.currentSource) {
-      track.currentSourceStopTime += ROW_DURATION;
-      track.currentSource.stop(track.currentSourceStopTime);
-    }
+    // Empty row: let whatever is playing on this channel keep playing.
     return;
   }
 
   const instrument = Instruments[cell.instrument];
+  if (!instrument) {
+    throw new Error(`Unknown instrument: ${cell.instrument}`);
+  }
 
-  // New note: cut off the previous source and start a new one
-  if (instrument.monophonic && track.currentSource) {
+  // Channels are monophonic: cut the previous note before starting a new one.
+  if (track.currentSource) {
     track.currentSource.stop(track.nextRowTime);
   }
 
@@ -222,6 +176,7 @@ function scheduleCell(track, cell) {
   };
 
   const gainNode = Audio.createGain();
+  const stopTime = track.nextRowTime + ROW_DURATION * instrument.durationRows;
   gainNode.gain.setValueAtTime(0, track.nextRowTime);
   gainNode.gain.linearRampToValueAtTime(
     instrument.volume,
@@ -231,84 +186,26 @@ function scheduleCell(track, cell) {
     instrument.volume,
     track.nextRowTime + instrument.attack,
   );
-  gainNode.gain.linearRampToValueAtTime(
-    0.0001,
-    track.nextRowTime + ROW_DURATION * instrument.durationRows,
-  );
+  gainNode.gain.linearRampToValueAtTime(0.0001, stopTime);
   source.connect(gainNode);
   gainNode.connect(Audio.destination);
   source.start(track.nextRowTime);
+  source.stop(stopTime);
 
-  track.currentSourceStopTime = track.nextRowTime + ROW_DURATION * instrument.durationRows;
-  source.stop(track.currentSourceStopTime);
-
-  if (instrument.monophonic) {
-    track.currentSource = source;
-  }
+  track.currentSource = source;
+  track.currentSourceStopTime = stopTime;
 }
 
 export function initAudio() {
   if (Audio) return;
 
   Audio = new AudioContext();
+  Instruments = {};
 
-  Instruments = {
-    [INSTRUMENTS.KICK]: {
-      buffer: makeKickBuffer(Audio),
-      loop: false,
-      pitched: false,
-      volume: 0.85,
-      attack: 0.001,
-      durationRows: 3,
-      monophonic: false,
-    },
-    [INSTRUMENTS.SNARE]: {
-      buffer: makeSnareBuffer(Audio),
-      loop: false,
-      pitched: false,
-      volume: 0.35,
-      attack: 0.001,
-      durationRows: 2,
-      monophonic: false,
-    },
-    [INSTRUMENTS.HIHAT]: {
-      buffer: makeHihatBuffer(Audio),
-      loop: false,
-      pitched: false,
-      volume: 0.18,
-      attack: 0.001,
-      durationRows: 1,
-      monophonic: false,
-    },
-    [INSTRUMENTS.BASS]: {
-      buffer: makeBassWaveBuffer(Audio),
-      loop: true,
-      pitched: true,
-      baseFrequency: 55,
-      volume: 0.22,
-      attack: 0.004,
-      durationRows: 2,
-      monophonic: true,
-    },
-    [INSTRUMENTS.PLUCK]: {
-      buffer: makePluckBuffer(Audio),
-      loop: false,
-      pitched: true,
-      baseFrequency: 440,
-      volume: 0.18,
-      attack: 0.001,
-      durationRows: 2,
-      monophonic: false,
-    },
-    [INSTRUMENTS.PAD]: {
-      buffer: makePadWaveBuffer(Audio),
-      loop: true,
-      pitched: true,
-      baseFrequency: 55,
-      volume: 0.1,
-      attack: 0.08,
-      durationRows: 16,
-      monophonic: true,
-    },
-  };
+  for (const [id, instrument] of Object.entries(SONG.instruments)) {
+    Instruments[id] = {
+      ...instrument,
+      buffer: BUFFER_FACTORIES[instrument.buffer](Audio),
+    };
+  }
 }
