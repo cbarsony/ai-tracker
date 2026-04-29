@@ -1,9 +1,11 @@
 # AI Tracker
 
-Browser-based music tracker inspired by FastTracker 2, enhanced with AI. Compose in a classic tracker grid — notes, samples, effects — and collaborate with an AI that reads and writes the same format.
+AI Tracker is an experimental tool for human-AI collaboration in music composition.
+Its goal is not to generate a finished, polished audio track, but to help create and refine the music itself.
+The primary artifact is an editable tracker-style score: rows, channels, notes, instruments, and timing data.
+This gives composers room to experiment, discuss alternatives, and develop ideas together with AI.
+The current prototype plays code-defined patterns in the browser using Web Audio.
+Songs can be shaped directly through structured musical data rather than through a fixed audio render.
+The project is focused on clear musical communication, fast iteration, and composer control.
 
-Retro 8-bit aesthetic. 4 channels. 32 samples. Hex notation. The constraints are the feature.
 
-## Status
-
-Early development — defining product vision and architecture.
