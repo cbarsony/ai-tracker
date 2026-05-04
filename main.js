@@ -5,6 +5,7 @@ const NOTE_OFF = -1;
 const LOOKAHEAD = 25;
 const SCHEDULE_AHEAD_TIME = 0.1;
 const ROW_DURATION = 60 / (SONG.bpm * SONG.rowsPerBeat);
+const MAX_VOLUME_EFFECT = 0x40;
 
 const SEMITONES = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 
@@ -55,11 +56,70 @@ function parseCell(cellText, rowIndex, channelIndex) {
   }
 
   const [, noteText, effect] = match;
+  const parsedEffect = parseEffect(effect, rowIndex, channelIndex);
 
-  if (noteText === "---") return { note: null, effect };
-  if (noteText === "===") return { note: NOTE_OFF, effect };
+  if (noteText === "---") return { note: null, effect: parsedEffect };
+  if (noteText === "===") return { note: NOTE_OFF, effect: parsedEffect };
 
-  return { note: noteTextToMidi(noteText), effect };
+  return { note: noteTextToMidi(noteText), effect: parsedEffect };
+}
+
+function parseEffect(effectText, rowIndex, channelIndex) {
+  if (effectText === "---") {
+    return { text: effectText, volumeMultiplier: 1 };
+  }
+
+  const volumeMatch = /^v([0-9a-fA-F]{2})$/.exec(effectText);
+  if (!volumeMatch) {
+    throw new Error(
+      `Invalid effect at row ${rowIndex}, channel ${channelIndex}: ${effectText}`,
+    );
+  }
+
+  return {
+    text: effectText,
+    volumeMultiplier: volumeEffectToGainMultiplier(
+      volumeMatch[1],
+      effectText,
+      rowIndex,
+      channelIndex,
+    ),
+  };
+}
+
+/**
+ * Converts an FT2-inspired volume effect into a Web Audio gain multiplier.
+ *
+ * The notation is `vxx`, where `v` means volume and `xx` is a hexadecimal
+ * value from `00` to `40` inclusive. This gives 65 steps: `v00` is silence,
+ * `v40` is full instrument volume, and `v20` is half perceived loudness.
+ *
+ * The returned value is not a direct linear mapping to gain. Human loudness
+ * perception is closer to logarithmic than linear, while Web Audio gain is a
+ * raw amplitude multiplier. To keep the tracker value human-oriented, the
+ * normalized volume step is squared before it is applied as gain.
+ *
+ * @param {string} hexValue Two hexadecimal digits from the `vxx` effect.
+ * @param {string} effectText Original effect text, used in error messages.
+ * @param {number} rowIndex Pattern row index, used in error messages.
+ * @param {number} channelIndex Pattern channel index, used in error messages.
+ * @returns {number} Gain multiplier applied to the instrument volume.
+ */
+function volumeEffectToGainMultiplier(
+  hexValue,
+  effectText,
+  rowIndex,
+  channelIndex,
+) {
+  const volumeValue = Number.parseInt(hexValue, 16);
+  if (volumeValue > MAX_VOLUME_EFFECT) {
+    throw new Error(
+      `Volume effect at row ${rowIndex}, channel ${channelIndex} must be between v00 and v40; received ${effectText}`,
+    );
+  }
+
+  const perceivedVolume = volumeValue / MAX_VOLUME_EFFECT;
+  return perceivedVolume * perceivedVolume;
 }
 
 function noteTextToMidi(noteText) {
@@ -133,7 +193,7 @@ function scheduleRow(track) {
   const cell = track.rows[track.row];
 
   console.log(
-    `t${Audio.currentTime.toFixed(3)} ${track.name} row ${track.row}: ${cell.note}|${cell.effect} (${track.nextRowTime.toFixed(3)})`,
+    `t${Audio.currentTime.toFixed(3)} ${track.name} row ${track.row}: ${cell.note}|${cell.effect.text} (${track.nextRowTime.toFixed(3)})`,
   );
 
   if (cell.note === NOTE_OFF) {
@@ -175,13 +235,14 @@ function scheduleRow(track) {
 
   const gainNode = Audio.createGain();
   const stopTime = track.nextRowTime + ROW_DURATION * instrument.durationRows;
+  const volume = instrument.volume * cell.effect.volumeMultiplier;
   gainNode.gain.setValueAtTime(0, track.nextRowTime);
   gainNode.gain.linearRampToValueAtTime(
-    instrument.volume,
+    volume,
     track.nextRowTime + instrument.attack,
   );
   gainNode.gain.setValueAtTime(
-    instrument.volume,
+    volume,
     track.nextRowTime + instrument.attack,
   );
   gainNode.gain.linearRampToValueAtTime(0.0001, stopTime);
