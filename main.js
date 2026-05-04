@@ -1,29 +1,10 @@
-import {
-  makeBassWaveBuffer,
-  makeHihatBuffer,
-  makeKickBuffer,
-  makePadWaveBuffer,
-  makePluckBuffer,
-  makeSnareBuffer,
-} from "./waveforms.js";
 import { SONG } from "./song1.js";
 
 const NOTE_OFF = -1;
-const EMPTY_CELL = "---|--";
 
-const SAMPLE_RATE = 44100;
 const LOOKAHEAD = 25;
 const SCHEDULE_AHEAD_TIME = 0.1;
 const ROW_DURATION = 60 / (SONG.bpm * SONG.rowsPerBeat);
-
-const BUFFER_FACTORIES = {
-  kick: makeKickBuffer,
-  snare: makeSnareBuffer,
-  hihat: makeHihatBuffer,
-  bass: makeBassWaveBuffer,
-  pluck: makePluckBuffer,
-  pad: makePadWaveBuffer,
-};
 
 const SEMITONES = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 
@@ -37,10 +18,9 @@ function buildTracks(song) {
   const channelCount = song.channels.length;
 
   return song.channels.map((name, channelIndex) => {
-    const rows = Array.from({ length: song.patternLength }, (_, rowIndex) => {
-      const cellText =
-        song.pattern[rowIndex * channelCount + channelIndex] ?? EMPTY_CELL;
-      return parseCell(cellText);
+    const rows = song.pattern.map((patternRow, rowIndex) => {
+      validatePatternRow(patternRow, rowIndex, channelCount);
+      return parseCell(patternRow[channelIndex], rowIndex, channelIndex);
     });
 
     return {
@@ -54,15 +34,32 @@ function buildTracks(song) {
   });
 }
 
-function parseCell(cellText) {
-  const [noteText, instrumentText] = cellText.split("|");
-  const instrument =
-    instrumentText && instrumentText !== "--" ? instrumentText : null;
+function validatePatternRow(patternRow, rowIndex, channelCount) {
+  if (!Array.isArray(patternRow)) {
+    throw new Error(`Pattern row ${rowIndex} must be an array`);
+  }
 
-  if (noteText === "---") return { note: null, instrument: null };
-  if (noteText === "===") return { note: NOTE_OFF, instrument: null };
+  if (patternRow.length !== channelCount) {
+    throw new Error(
+      `Pattern row ${rowIndex} has ${patternRow.length} cells, expected ${channelCount}`,
+    );
+  }
+}
 
-  return { note: noteTextToMidi(noteText), instrument };
+function parseCell(cellText, rowIndex, channelIndex) {
+  const match = /^(---|===|[A-G][#-]\d)\|(.{3})$/.exec(cellText);
+  if (!match) {
+    throw new Error(
+      `Invalid cell at row ${rowIndex}, channel ${channelIndex}: ${cellText}`,
+    );
+  }
+
+  const [, noteText, effect] = match;
+
+  if (noteText === "---") return { note: null, effect };
+  if (noteText === "===") return { note: NOTE_OFF, effect };
+
+  return { note: noteTextToMidi(noteText), effect };
 }
 
 function noteTextToMidi(noteText) {
@@ -136,7 +133,7 @@ function scheduleRow(track) {
   const cell = track.rows[track.row];
 
   console.log(
-    `t${Audio.currentTime.toFixed(3)} ${track.name} row ${track.row}: ${cell.note}/${cell.instrument} (${track.nextRowTime.toFixed(3)})`,
+    `t${Audio.currentTime.toFixed(3)} ${track.name} row ${track.row}: ${cell.note}|${cell.effect} (${track.nextRowTime.toFixed(3)})`,
   );
 
   if (cell.note === NOTE_OFF) {
@@ -152,9 +149,9 @@ function scheduleRow(track) {
     return;
   }
 
-  const instrument = Instruments[cell.instrument];
+  const instrument = Instruments[track.name];
   if (!instrument) {
-    throw new Error(`Unknown instrument: ${cell.instrument}`);
+    throw new Error(`Unknown instrument for channel: ${track.name}`);
   }
 
   // Channels are monophonic: cut the previous note before starting a new one.
@@ -168,7 +165,8 @@ function scheduleRow(track) {
   if (instrument.pitched) {
     const freq = noteToFrequency(cell.note);
     const sourceBaseFrequency =
-      instrument.baseFrequency ?? SAMPLE_RATE / instrument.buffer.length;
+      instrument.baseFrequency ??
+      instrument.buffer.sampleRate / instrument.buffer.length;
     source.playbackRate.value = freq / sourceBaseFrequency;
   }
   source.onended = () => {
@@ -202,10 +200,66 @@ export function initAudio() {
   Audio = new AudioContext();
   Instruments = {};
 
-  for (const [id, instrument] of Object.entries(SONG.instruments)) {
-    Instruments[id] = {
+  for (const channelName of SONG.channels) {
+    const instrument = SONG.instruments[channelName];
+    if (!instrument) {
+      throw new Error(`Missing instrument for channel: ${channelName}`);
+    }
+
+    Instruments[channelName] = {
       ...instrument,
-      buffer: BUFFER_FACTORIES[instrument.buffer](Audio),
+      buffer: makeInstrumentBuffer(instrument),
     };
+  }
+}
+
+function makeInstrumentBuffer(instrument) {
+  const sampleRate = Audio.sampleRate;
+  const samples = instrument.samples ?? instrument.generator?.({ sampleRate });
+
+  validateInstrumentSamples(samples, instrument.description);
+
+  const buffer = Audio.createBuffer(1, samples.length, sampleRate);
+  buffer.copyToChannel(samples, 0);
+  return buffer;
+}
+
+function validateInstrumentSamples(samples, description) {
+  const label = description ? ` (${description})` : "";
+
+  if (!(samples instanceof Float32Array)) {
+    throw new Error(`Instrument samples${label} must be a Float32Array`);
+  }
+
+  if (samples.length === 0) {
+    throw new Error(`Instrument samples${label} must not be empty`);
+  }
+
+  let clippedSampleCount = 0;
+  let peak = 0;
+
+  for (let i = 0; i < samples.length; i++) {
+    const sample = samples[i];
+    if (!Number.isFinite(sample)) {
+      throw new Error(
+        `Instrument sample ${i}${label} must be a finite number; received ${sample}`,
+      );
+    }
+
+    peak = Math.max(peak, Math.abs(sample));
+
+    if (sample < -1) {
+      samples[i] = -1;
+      clippedSampleCount++;
+    } else if (sample > 1) {
+      samples[i] = 1;
+      clippedSampleCount++;
+    }
+  }
+
+  if (clippedSampleCount > 0) {
+    console.warn(
+      `Instrument samples${label} had ${clippedSampleCount} value(s) outside -1..1; peak was ${peak}. Values were clamped.`,
+    );
   }
 }
