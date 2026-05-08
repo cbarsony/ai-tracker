@@ -1,3 +1,9 @@
+import {
+  DrumInstrumentDefinition,
+  PitchedInstrumentDefinition,
+} from "./src/song/instrument-definition.js";
+import { SongDefinition } from "./src/song/song-definition.js";
+
 const pattern = [
   //       kick       snare      hi-hat     bass       pluck      pad
   /*00*/ ["C-2|---", "---|---", "F#2|---", "C-2|---", "C-5|---", "C-3|---"],
@@ -187,78 +193,71 @@ function makeSnareSamples({ sampleRate }) {
   return samples;
 }
 
-export const SONG = {
+/** @type {Record<string, Instrument>} */
+const instruments = {
+  Kick: new DrumInstrumentDefinition({
+    description:
+      "Short electronic kick with a falling sine body and a tiny noisy click at the attack.",
+    generator: makeKickSamples,
+    loop: false,
+    volume: 0.85,
+    attack: 0.001,
+    durationRows: 3,
+  }),
+  Snare: new DrumInstrumentDefinition({
+    description:
+      "Short snare made from bright noise mixed with a low tonal body and a medium decay.",
+    generator: makeSnareSamples,
+    loop: false,
+    volume: 0.35,
+    attack: 0.001,
+    durationRows: 2,
+  }),
+  "Hi-hat": new DrumInstrumentDefinition({
+    description:
+      "Very short closed hi-hat: sharp high-frequency noise with a fast, crisp decay.",
+    generator: makeHihatSamples,
+    loop: false,
+    volume: 0.28,
+    attack: 0.001,
+    durationRows: 1,
+  }),
+  Bass: new PitchedInstrumentDefinition({
+    description:
+      "Looped low bass waveform combining saw and square shapes for a buzzy, solid synth bass.",
+    generator: makeBassSamples,
+    loop: true,
+    baseFrequency: 55,
+    volume: 0.22,
+    attack: 0.004,
+    durationRows: 2,
+  }),
+  Pluck: new PitchedInstrumentDefinition({
+    description:
+      "Brief bright pluck with a 440 Hz sine tone plus harmonics and a quick natural fade.",
+    generator: makePluckSamples,
+    loop: false,
+    baseFrequency: 440,
+    volume: 0.18,
+    attack: 0.001,
+    durationRows: 2,
+  }),
+  Pad: new PitchedInstrumentDefinition({
+    description:
+      "Looped warm pad waveform with a soft fundamental and gentle upper harmonics.",
+    generator: makePadSamples,
+    loop: true,
+    baseFrequency: 55,
+    volume: 0.1,
+    attack: 0.08,
+    durationRows: 16,
+  }),
+};
+
+export const SONG = new SongDefinition({
   bpm: 120,
   rowsPerBeat: 4,
-
   channels: ["Kick", "Snare", "Hi-hat", "Bass", "Pluck", "Pad"],
-
-  pattern: pattern,
-
-  /** @type {Record<string, Instrument>} */
-  instruments: {
-    Kick: {
-      description:
-        "Short electronic kick with a falling sine body and a tiny noisy click at the attack.",
-      generator: makeKickSamples,
-      loop: false,
-      pitched: false,
-      volume: 0.85,
-      attack: 0.001,
-      durationRows: 3,
-    },
-    Snare: {
-      description:
-        "Short snare made from bright noise mixed with a low tonal body and a medium decay.",
-      generator: makeSnareSamples,
-      loop: false,
-      pitched: false,
-      volume: 0.35,
-      attack: 0.001,
-      durationRows: 2,
-    },
-    "Hi-hat": {
-      description:
-        "Very short closed hi-hat: sharp high-frequency noise with a fast, crisp decay.",
-      generator: makeHihatSamples,
-      loop: false,
-      pitched: false,
-      volume: 0.28,
-      attack: 0.001,
-      durationRows: 1,
-    },
-    Bass: {
-      description:
-        "Looped low bass waveform combining saw and square shapes for a buzzy, solid synth bass.",
-      generator: makeBassSamples,
-      loop: true,
-      pitched: true,
-      baseFrequency: 55,
-      volume: 0.22,
-      attack: 0.004,
-      durationRows: 2,
-    },
-    Pluck: {
-      description:
-        "Brief bright pluck with a 440 Hz sine tone plus harmonics and a quick natural fade.",
-      generator: makePluckSamples,
-      loop: false,
-      pitched: true,
-      baseFrequency: 440,
-      volume: 0.18,
-      attack: 0.001,
-      durationRows: 2,
-    },
-    Pad: {
-      description:
-        "Looped warm pad waveform with a soft fundamental and gentle upper harmonics.",
-      generator: makePadSamples,
-      loop: true,
-      pitched: true,
-      baseFrequency: 55,
-      volume: 0.1,
-      attack: 0.08,
-      durationRows: 16,
-    },
-  },
-};
+  pattern,
+  instruments,
+});
