@@ -8,6 +8,8 @@
       body {
         background-color: rgb(30, 63, 71);
         display: flex;
+        flex-direction: column;
+        gap: 16px;
         justify-content: center;
         align-items: center;
         height: 100vh;
@@ -19,14 +21,16 @@
         font-size: 1.2rem;
         font-family: sans-serif;
         font-weight: 600;
-        letter-spacing: 0.05em;
         color: #fff;
         background-color: rgb(30, 140, 160);
         border: none;
         border-radius: 8px;
         cursor: pointer;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+        transition:
+          background-color 0.2s,
+          transform 0.1s,
+          box-shadow 0.2s;
       }
 
       #play:hover {
@@ -38,10 +42,23 @@
         transform: scale(0.97);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
       }
+
+      #play:disabled {
+        cursor: wait;
+        opacity: 0.7;
+      }
+
+      #status {
+        min-height: 1.2em;
+        margin: 0;
+        color: rgba(255, 255, 255, 0.78);
+        font-family: sans-serif;
+      }
     </style>
   </head>
   <body>
     <button id="play">Play</button>
+    <p id="status">Stopped</p>
     <script type="module" src="main.js"></script>
   </body>
 </html>
