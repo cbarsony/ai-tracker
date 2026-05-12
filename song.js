@@ -1,23 +1,33 @@
 const kickSample =
   "data:audio/wav;base64,UklGRsQFAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaAFAABgrYDHnt+58s//4P/q/+7/6/ri6dTTwbmrnpGDdmhcT0M4LiYeFxIODAsLDRAUGiEpMjxGUV1pdYGNmaSvusPM1Nvh5uns7e3s6ubi3NXOxr20qp+Vin90amBWTEM7NC0oIx8cGhkZGh0gIyguNDtDS1RdZm95goyVnqevt77FytDU2Nvd3t/e3dvY1dDLxsC5squjm5OKgnpyamJaU01GQDs3Mi8sKikoKCgqLC4xNTk+Q0lPVVxiaXF4f4aNlJuhp62yuLzAxMfKzM7P0NDPzs3LyMXBvrm1sKuloJqUjoiCfHZwamVfWlVRTEhFQj88Ojk4Nzc3Nzg6PD5AQ0ZKTVFWWl9jaG1yd3yCh4uQlZqeoqaqrbG0trm7vb6/wMHBwcC/vr27ube0sq+sqKWhnZqWko2JhYF9eXVxbWlmYl9cWVZTUU9NS0pIR0dGRkZGR0dISUtMTlBSVFZZXF5hZGdqbnF0d3t+gYWIi46RlJeZnJ6ho6Wnqaqsra6vsLGxsbGxsbGwr6+urKuqqKelo6GfnZuYlpSRj4yKh4WCgH17eHZzcW9ta2lnZWNhYF5dXFtaWVhXV1ZWVVVVVVZWVldXWFlaW1xdXmBhYmRlZ2lqbG5wcXN1d3l7fH6AgoSFh4mKjI6PkZKUlZaXmZqbnJydnp+foKChoaGioqKioqKhoaGgoJ+fnp6dnJuamZmYl5aUk5KRkI+NjIuKiYeGhYSCgYB/fXx7enl4d3V0c3JxcXBvbm1sbGtqamlpaGhnZ2ZmZmZlZWVlZWVlZWVlZmZmZmdnZ2hoaWlpamtrbGxtbW5vb3BxcnJzdHR1dnd3eHl6e3t8fX5+f4CAgYKDg4SFhYaGh4iIiYmKiouLjIyNjY6Ojo+Pj5CQkJCRkZGRkZGSkpKSkpKSkpKSkpKSkpKRkZGRkZGQkJCQkI+Pj4+Ojo6NjY2MjIyLi4uKioqJiYmIiIeHh4aGhoWFhISEg4ODgoKCgYGAgIB/f39+fn5+fX19fHx8e3t7e3p6enp5eXl5eXh4eHh4eHd3d3d3d3Z2dnZ2dnZ2dnZ2dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXZ2dnZ2dnZ2dnZ2dnZ3d3d3d3d3d3d3d3h4eHh4eHh4eHl5eXl5eXl5enp6enp6enp6e3t7e3t7e3t8fHx8fHx8fHx9fX19fX19fX19fn5+fn5+fn5+fn9/f39/f39/f39/f3+AgICAgICAgICAgICAgICBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA=";
 
+const snareSample =
+  "data:audio/wav;base64,UklGRsQFAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaAFAABTrlSeXMKg52jaZahzg5G+pZ+OQVODoXuvl4SXaUFwG5x+fYeSiF5WZmZKuXqWaLp+6cazdJnOmojPTcOvdUAzM498gT0cMVd1boZIQWxVjVOimoyO0aRjxYDJ0MC5goVqf1S2pmZNbUldZJN1YT0yPHlNP45JlqOJUXikjpGZb6/KkJqcv5OaZYaMdbNtQot/ZldIY3kvbDJyhXuNi4SDfJChbYqIq5qftoyQzIKbuoarYqKOXKZHTI5QkkuIU4tbUk1Ma2uBWFyMcaOabZSKvY2Nx3yenISrf5OGlG9bhGtMbD9IiXGDcYxqRlCIlJSPbZuFhaKgd36ogpysfnhuoa6LnpGGk2Fdh5KTj0pDR2tQf3hRgI2hjGiKnGiUmJl1sKeerIp8gKWCiHWac11kh2GKVk1Tc2R3glZQdoZ4aJGjkKqMrXqFeKx8roybcnBxlJCDjoF5lXGFVYSNWWxhh452ZouEhnV+aIuMg5aTmHWlkpygk6SYdIZvn32FaoR4i2toVn54YYqHj2CIh4R8a5KBiKGGnZiQdYqUnIN9eqCcdoRvj3iCfXh1h3B7WXZmhn1eZGB+g4twiXV4lIKYeYZ4mXp/jJ1xlJeCeXdxcG5rfXVch2B9ZoeEenl7coeRb3qXnJF+kpCGd42MlHyGknhuc46GaoB+a2tthoWEYG1ph3eMjYCQhoiGdo2dj4CWlIaBkZGdkJCClpOIc4J7aHhwd3dmhIJjbHR2e3qHhX+RlHh3kop+eJSQfpeRjZSVjY+LgHt+bXh6d21tb3hyc3lvdHN6cIR3iYF+jn16hIZ+gIyWkXqNfI96eXZye21veHZ+coZrc3B6b4B2bXZ+iYGJk3iLf4mWgZWAeo2Mf4B5dYFzgXZuhX13gHiEdYV2dnh+eXp6iXWLjoGOjJKUh4mOlISMioeEiXl9hHR8h4J2g4FveIRxb299dnR4iHN0f36Mi4R7kn2Eh42Le4aGeX2Le3p+goR/fXZ1em+Fb3d8fnt9fnl6g4yNhI+JhYWDi36JhHyOfHqHh3h+d3qGd3x2f3Byd3N4dISCdnp4h4aAfYGKi4qLfoR8gI6Lfo2Hhn6Iend3g4N6eXJye3KDeXR6fYZ6hnh6eIF/iIl+h4WHhnyJiYt+gYmHfn+De313f4CEd4CAhIJ3hXh1gn1+eX1+gYqFf4iIi4d/i4uEg4l8gIR5gHiBgn92gHx1dXl1eIF7hX+Bhnp7e4KBhYqGf4h+goKGiYGEhoCAf4V+hYB+hIN7eXh8f3+Dg4B8hX2BhoGIfX6DhYiIfn+Cfn2HhoN7fn18hHl7enp2eX99g3h6f3l4fHyFfICCf4iAgYmCiYF+hoCCh4d9gH1/hXmBgn99enx+f4CCf4F6gn19e3+ChYSFhn6DiYiEiIWFh4WDhIV7fnt8fnl6fH55e397fHl6fn96fX2FhIV9goeCg4KBfn+Fhn6Bg32AhHyCf3qAfIF6eoB7eX2AgXl9gH5/gIJ/hISEgoOBhYZ/gYeCf35/gISEfn1+gXp+eoCBfX+Benp/gH9/hIKDg4B+fn+DgYR/gYOEhH6Ffn+Bf399fYGAgYB8gYCAf4J+f3yBfoGBfn2DgoR+hISEgIKAg4GCgIKBgn6AfYF7gX9/gH18f319gIB/gn2CgIN+f4GChICFf4V/goKChICCgIF9gnyAgHx/f3t+fnt7f3+AgoCBfoCBf36CgISCg4GDgIR/g4GAg4J/fn9+fHx+fn99gHx/fYF/f3+BfYCDgYJ+foCDg3+AgoCAg4F/goB/g4KCgn2Afn9/gH2BfX9/fX9/foCBf4B/f36Bf4GBg4GAgYF/gX9/goB+gX19fn5+f3x8fn1+fn5+foCBf4F/gYCAf4CCg3+AgIOCf4OBf39/fn+AgYF/f3+BfX9/fYF+gX99foI=";
+
+const closedHiHatSample =
+  "data:audio/wav;base64,UklGRsQFAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaAFAACR5qdlGk5B3IQ+dHVQp4aogKzSWF5aUlxGgrx4znt/k545zZmYQEejZWJ+kjycsKlfacCxd3W4nIxQvZZtgnpKZIiToJhiXV2TmJSGl3avdlWgfpijcZuEZqehhYGre3x/cW5zlpWRgWKCm42LeJt6d4yZdmNvbn9mY5iPfIR6gJZmhWOdjXecd2l2b46EmoGMbolziJOLd46Rf4x1i3Z9em5tkYh/iYGEfXWPjYKEgHN0j4h5gm6Nd4aIdI95fH9/cn6Kjnl4iXOJc3h7jX95dXp2fnd4dIV4hX6LiXh4hIB/goiDeX+He3x/ioOHiX+JfYOAiYOEh4aBg3qIfIGAgYV+eoR9gXt/goGFgoOAhH16en5+fH6Bgn+Bfnt7hYCEgoCAfYB7hX2EfX5+gXt/hYGChYN+g4SEg32Bg4B9gX9+f32Cfn2DfIR8f4GCfIGBf32BgoGAf4F/gn2CfoGCgoCDgX+Cfn2CfX5+gIJ/fn2BgH5/fn+AgIKAgoGAf4KCfn9+gICBgoB/gYGCf4KCfoF/gIGAgYKBgYF/f4GCgYF/fn9/gH+Af4GAgH+BgIB/f4CBf4F/gX9/gH+AgYGBf3+AgX+AgX+Af4CAf4B/gICAf3+BgH+Af4B/gIB/f39/gH+Af4CBgICAgIGAgICBgICAgYCAgICAgH+Af39/gICAgH+AgICAgYCAgICAgICAgICAgIGAgICAgYCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA=";
+
+const bassSample =
+  "data:audio/wav;base64,UklGRgQRAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YeAQAACAiZKbo6uzu8LIz9TZ3eHk5ujp6unp6Obk4d7b19PPy8fDvrq1sa2opKCcmJWRjoqHg4B9eXZzb2toZGBcWFRQTEhDPzs3My8sKCUiIB4dHBsbHB0fISQoLDE2PEJJUFdfZ294gIiRmaGosLe9w8nO0tba3d/g4uLi4eDf3drX1NHNysbCvrq1sa2ppaKempeTkI2JhoOAfXp3dHBtamZjX1tXVFBMSERAPDg1Mi8sKSclJCMiIiMkJigrLjI2O0FHTVNaYmlxeICIj5eepayzub7EyM3Q09bY2trb29rZ2NbU0c7LyMTBvbm1sq6qpqOfnJiVko+MiYaDgH16d3RxbmtoZWFeWldTT0xIRUE+Ojc0Mi8tLCoqKSkqKywuMTQ4PEBFS1FXXWRrcnmAh46VnKOpr7W6v8PHys3Q0tPU1NTU09HQzsvJxsO/vLm1sq6qp6SgnZqXk5GOi4iFg4B9e3h1cnBtamdkYF1aVlNQTElGQj89Ojc1MzIxMC8wMDEyNDc6PUFFSk9UWmBmbHN5gIeNlJqgpqyxtrq+wsXIyszNzs7Ozs3MysjGw8G+u7i1sa6rp6ShnpuYlZKPjYqHhYKAfnt5dnNxbmtpZmNgXVlWU1BNSkdEQT89Ozk3NjY1NTY3ODo8P0JFSU5SV1xiaG50eoCGjJKYnqOorbK2ur3Aw8XGx8jJycjHxsXDwb68ube0sa6rqKWin5yZlpORjoyJh4WCgH57eXd0cm9tamhlYl9cWVZTUU5LSEZEQkA+PTw7Ozs7PD0/QUNGSk1RVVpfZGlvdXqAhouRlpyhpaqusra5u77AwcLDw8PDwsHAvry6uLWzsK2qqKWin5yal5SSkI2LiYaEgoB+fHp3dXNxbmxpZ2RhX1xZV1RRT0xKSEZEQ0JBQEBAQEFCREVISk1RVVldYWZrcHV7gIWLkJWanqOnq66ytbe5u7y+vr6+vr28u7m4trSxr6yqp6Win52amJWTkY6MioiGhIKAfnx6eHZ0cnBta2lmZGFfXFpXVVJQTkxKSUdGRUVEREVFR0hKTE5RVFhbX2RobXF2e4CFio+TmJygpKirrrGztbe4ubq6urq5uLe1tLKwrqypp6WioJ2bmJaUko+Ni4mHhoSCgH58enl3dXNxb2xqaGZjYV9cWlhWVFJQTk1LSklJSUlJSktMTlBSVVdbXmJmam5yd3uAhYmOkpaanqKlqKutr7GztLW2tra1tbSzsbCurKqopqSioJ2bmZeVkpCOjIuJh4WDgoB+fXt5d3Z0cnBubGpoZWNhX11bWVdVU1JQT05NTU1NTU5PUFFTVVhaXWFkaGtvc3h8gISIjZGUmJyfoqWoqqyur7CxsrKysrGwr66sq6mnpqShn52bmZeVlJKQjoyLiYeGhIOBgH99fHp5d3V0c3JwbmxramloZ2ZlZGNjYmJiYmJiY2NkZWdoamttb3J0dnl7fYCDhYeKjI6QkpSWl5mam5ydnZ2enZ2dnJybmpmYl5aVlJORkI+OjYyLiomJiIeGhoWEhIOCgoGBgH9/fn59fHx7enp5eHd3dnV0dHNycnFwcG9vb25ubm5ubm9vcHBxcnN0dXZ3eXp8fX+AgYOEhoeIiouMjY6Pj5CRkZGRkZGRkZGQkJCPjo6NjIyLioqJiIeHhoWFhIODgoKBgYB/f35+fX18e3t6eXl4d3d2dXV0c3NycXFxcHBwb29vb3BwcHFxcnN0dXZ3eHl7fH1/gIGDhIWHiImKi4yNjo6Pj5CQkJCQkJCQj4+Ojo2NjIyLioqJiIeHhoaFhISDg4KCgYGAf39+fn19fHx7e3p5eXh3d3Z1dXR0c3NycnFxcXFxcXFxcXFycnN0dXZ3eHl6e3x9f4CBg4SFhoeIiYqLjI2Njo6Pj4+Pj4+Pj46OjY2MjIuLiomJiIiHhoaFhYSEg4ODgoKCgYGAgIB/f35+fX18e3t6enl5eHd3dnZ1dHR0c3NycnJycnJycnJzc3N0dXV2d3h5ent8fn+AgYKEhYaHiImKiouMjI2NjY6Ojo6Ojo2NjYyMjIuKiomJiIiHhoaFhYSEg4ODgoKBgYGAgIB/f39+fn19fHx7e3t6enl5eHh3d3Z2dnV1dHR0c3Nzc3Nzc3Nzc3R0dXZ2d3h5ent8fX5/gIGCg4SFhoeIiYqKi4uMjI2NjY2NjY2MjIyMi4uKiomJiIiHh4aFhYSEg4ODgoKBgYGAgIB/f39+fn59fX18fHt7enp5eXh4d3d2dnV1dXR0dHR0dHR0dHR1dXZ2d3h4eXp7fH1+f4CBgoOEhYaHh4iJioqLi4uMjIyMjIyMjIuLi4qKiYmJiIiHh4aGhYWEhIODgoKCgYGAgIB/f36+fn19fHx7e3t6enl5eHh3d3Z2dnZ2dXV1dXZ2dnZ3d3h4eXl6e3x9fn+AgYKCg4OEhYWGhoaHh4eHiIiIiIiIiIiHh4eHhoaGhYWFhISDg4KCgoGBgYCAgH9/f35+fn19fX18fHx7e3t6enp5eXh4eHh4eHh4eHh4eHl5eXl6enp7e3x9fX5+f4CAgYGCgoKDg4SFhYaGhoaHh4eHh4eHh4aGhoaFhYWEhISDg4ODgoKCgYGBgYCAgH9/f39+fn59fX18fHx7e3t6enp6eXl5eXl5eXl5eXl5eXp6ent7e3x8fH19fn5/f4CAgIGBgoKCg4OEhISFhYWFhYaGhoaGhoaFhYWFhYWFhISDg4ODgwKCgoKBgYGBgYCAgICAf39/f39+fn59fX19fHx8e3t7e3p6enp6enl5eXl5eXl5eXl6enp6e3t7fHx9fX5+fn+AgICBgYKCgoODg4SEhISEhYWFhYWFhYWFhYSEhISDg4ODg4KCgoKCgYGBgYGBgICAgICAf39/f39+fn5+fX19fX18fHx8e3t7e3t6enp6enp6enp6enp6e3t7e3x8fH19fX5+f3+AgICBgYGBgoKCg4ODg4SEhISEhISFhYWEhISEhISEhISDg4ODg4KCgoKCgYGBgYGBgICAgICAf39/f39+fn5+fX19fX19fHx8fHt7e3t7e3t7e3t7e3t7e3t8fHx8fX19fX5+fn9/f4CAgoGCgoKDg4ODhISEhISEhIQ=";
+
+
 const pattern = [
   //       00         01         02         03
-  /*00*/ ["C-300---", "--------", "--------", "--------"],
-  /*01*/ ["--------", "--------", "--------", "--------"],
-  /*02*/ ["--------", "--------", "--------", "--------"],
+  /*00*/ ["C-400---", "D-403---", "--------", "--------"],
+  /*01*/ ["--------", "D-403---", "--------", "--------"],
+  /*02*/ ["C-402---", "--------", "--------", "--------"],
   /*03*/ ["--------", "--------", "--------", "--------"],
-  /*04*/ ["--------", "--------", "--------", "--------"],
+  /*04*/ ["C-401---", "--------", "--------", "--------"],
   /*05*/ ["--------", "--------", "--------", "--------"],
-  /*06*/ ["--------", "--------", "--------", "--------"],
-  /*07*/ ["--------", "--------", "--------", "--------"],
-  /*08*/ ["--------", "--------", "--------", "--------"],
+  /*06*/ ["C-402---", "D-403---", "--------", "--------"],
+  /*07*/ ["--------", "D-403---", "--------", "--------"],
+  /*08*/ ["C-400---", "--------", "--------", "--------"],
   /*09*/ ["--------", "--------", "--------", "--------"],
-  /*10*/ ["--------", "--------", "--------", "--------"],
-  /*11*/ ["--------", "--------", "--------", "--------"],
-  /*12*/ ["--------", "--------", "--------", "--------"],
-  /*13*/ ["--------", "--------", "--------", "--------"],
-  /*14*/ ["--------", "--------", "--------", "--------"],
+  /*10*/ ["C-402---", "D-403---", "--------", "--------"],
+  /*11*/ ["--------", "E-403---", "--------", "--------"],
+  /*12*/ ["C-401---", "F-403---", "--------", "--------"],
+  /*13*/ ["--------", "G-403---", "--------", "--------"],
+  /*14*/ ["C-402---", "--------", "--------", "--------"],
   /*15*/ ["--------", "--------", "--------", "--------"],
 ];
 
@@ -27,11 +37,24 @@ const instruments = [
     sample: kickSample,
     volume: 0.9,
   },
+  {
+    name: "snare",
+    sample: snareSample,
+    volume: 0.8,
+  },
+  {
+    name: "closedHiHat",
+    sample: closedHiHatSample,
+    volume: 0.6,
+  },
+  {
+    name: "bass",
+    sample: bassSample,
+    volume: 0.9,
+  },
 ];
 
 export const song = {
-  bpm: 120,
-  rowsPerBeat: 4,
   pattern,
   instruments,
 };

@@ -3,6 +3,8 @@ import { NOTE_OFF, parseCell } from "./cell.js";
 
 const LOOKAHEAD_MS = 25;
 const SCHEDULE_AHEAD_SECONDS = 0.1;
+const BPM = 140;
+const ROWS_PER_BEAT = 4;
 
 const playButton = document.getElementById("play");
 const statusText = document.getElementById("status");
@@ -28,6 +30,7 @@ playButton.addEventListener("click", async () => {
     stop(error.message);
   } finally {
     playButton.disabled = false;
+    playButton.focus();
   }
 });
 
@@ -101,7 +104,7 @@ function buildPattern(currentSong) {
 }
 
 function schedulerTick() {
-  const rowDuration = 60 / (song.bpm * song.rowsPerBeat);
+  const rowDuration = 60 / (BPM * ROWS_PER_BEAT);
 
   while (nextRowTime < audioContext.currentTime + SCHEDULE_AHEAD_SECONDS) {
     scheduleRow(parsedPattern[nextRowIndex], nextRowTime);
