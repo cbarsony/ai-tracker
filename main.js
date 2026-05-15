@@ -3,6 +3,7 @@ import { NOTE_OFF, parseCell } from "./cell.js";
 
 const LOOKAHEAD_MS = 25;
 const SCHEDULE_AHEAD_SECONDS = 0.1;
+const SAMPLE_FADE_SECONDS = 0.005;
 const BPM = 140;
 const ROWS_PER_BEAT = 4;
 
@@ -15,6 +16,7 @@ let nextRowTime = 0;
 let nextRowIndex = 0;
 let parsedPattern = null;
 let instrumentBuffers = null;
+const activeSampleNodes = new Set();
 
 playButton.addEventListener("click", async () => {
   playButton.disabled = true;
@@ -53,6 +55,8 @@ function stop(status = "Stopped") {
     clearInterval(timerId);
     timerId = null;
   }
+
+  fadeOutActiveSamples();
 
   playButton.textContent = "Play";
   setStatus(status);
@@ -131,13 +135,61 @@ function scheduleRow(row, time) {
 function playSample(instrument, time) {
   const source = audioContext.createBufferSource();
   const gain = audioContext.createGain();
+  const volume = instrument.volume ?? 1;
+  const duration = instrument.buffer.duration;
+  const fadeInDuration = Math.min(SAMPLE_FADE_SECONDS, duration / 2);
+  const fadeOutDuration = Math.min(SAMPLE_FADE_SECONDS, duration / 2);
+  const endTime = time + duration;
 
   source.buffer = instrument.buffer;
-  gain.gain.setValueAtTime(instrument.volume ?? 1, time);
+  gain.gain.setValueAtTime(0, time);
+  gain.gain.linearRampToValueAtTime(volume, time + fadeInDuration);
+
+  if (endTime > time + fadeOutDuration) {
+    gain.gain.setValueAtTime(volume, endTime - fadeOutDuration);
+    gain.gain.linearRampToValueAtTime(0, endTime);
+  }
 
   source.connect(gain);
   gain.connect(audioContext.destination);
+  const sampleNode = { source, gain };
+  activeSampleNodes.add(sampleNode);
+  source.addEventListener("ended", () => {
+    gain.disconnect();
+    activeSampleNodes.delete(sampleNode);
+  });
   source.start(time);
+}
+
+function fadeOutActiveSamples() {
+  if (!audioContext) {
+    return;
+  }
+
+  const now = audioContext.currentTime;
+  const stopTime = now + SAMPLE_FADE_SECONDS;
+
+  for (const sampleNode of activeSampleNodes) {
+    const { source, gain } = sampleNode;
+    rampGainToZero(gain.gain, now, stopTime);
+
+    try {
+      source.stop(stopTime);
+    } catch {
+      activeSampleNodes.delete(sampleNode);
+    }
+  }
+}
+
+function rampGainToZero(gainParam, startTime, endTime) {
+  if (typeof gainParam.cancelAndHoldAtTime === "function") {
+    gainParam.cancelAndHoldAtTime(startTime);
+  } else {
+    gainParam.cancelScheduledValues(startTime);
+    gainParam.setValueAtTime(gainParam.value, startTime);
+  }
+
+  gainParam.linearRampToValueAtTime(0, endTime);
 }
 
 function setStatus(message) {
