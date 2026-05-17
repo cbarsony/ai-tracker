@@ -14,6 +14,9 @@ const gridView = new GridView({
   container: gridContainer,
   toolbar,
   song,
+  onPreviewNote: (note, instrument) => {
+    player.previewNote(note, instrument).catch((error) => console.error(error));
+  },
 });
 gridView.render();
 gridView.focus();

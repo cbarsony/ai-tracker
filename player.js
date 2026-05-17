@@ -53,6 +53,23 @@ export class Player {
     }
   }
 
+  async previewNote(note, instrumentIndex) {
+    try {
+      await this.initAudio();
+      await this.audioContext.resume();
+    } catch (error) {
+      console.error(error);
+      return;
+    }
+
+    const instrument = this.instrumentBuffers[instrumentIndex];
+    if (!instrument) {
+      return;
+    }
+
+    this.playSample(instrument, note, this.audioContext.currentTime);
+  }
+
   async initAudio() {
     if (!this.audioContext) {
       this.audioContext = new AudioContext();

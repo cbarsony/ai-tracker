@@ -25,11 +25,12 @@ const PIANO_KEY_OFFSETS = {
 const NOTE_OFF_KEY = "Backquote"; // `
 
 export class GridView {
-  constructor({ container, toolbar, song, onCellSelect } = {}) {
+  constructor({ container, toolbar, song, onCellSelect, onPreviewNote } = {}) {
     this.container = container;
     this.toolbar = toolbar;
     this.song = song;
     this.onCellSelect = onCellSelect ?? null;
+    this.onPreviewNote = onPreviewNote ?? null;
 
     this.cursorRow = 0;
     this.cursorColumn = 0;
@@ -331,6 +332,9 @@ export class GridView {
           note: midi,
           instrument: this.currentInstrument,
         });
+        if (this.onPreviewNote) {
+          this.onPreviewNote(midi, this.currentInstrument);
+        }
         this.advanceCursor();
       }
       return;
