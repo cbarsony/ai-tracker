@@ -5,6 +5,11 @@ const SCHEDULE_AHEAD_SECONDS = 0.1;
 const SAMPLE_FADE_SECONDS = 0.005;
 const BPM = 140;
 const ROWS_PER_BEAT = 4;
+const DEFAULT_ROOT_NOTE = 60;
+
+export function notePitch(note, rootNote = DEFAULT_ROOT_NOTE) {
+  return 2 ** ((note - rootNote) / 12);
+}
 
 export class Player {
   constructor(song) {
@@ -110,20 +115,22 @@ export class Player {
         throw new Error(`Unknown instrument number: ${cell.instrument}`);
       }
 
-      this.playSample(instrument, time);
+      this.playSample(instrument, cell.note, time);
     }
   }
 
-  playSample(instrument, time) {
+  playSample(instrument, note, time) {
     const source = this.audioContext.createBufferSource();
     const gain = this.audioContext.createGain();
     const volume = instrument.volume ?? 1;
-    const duration = instrument.buffer.duration;
+    const playbackRate = notePitch(note, instrument.rootNote ?? DEFAULT_ROOT_NOTE);
+    const duration = instrument.buffer.duration / playbackRate;
     const fadeInDuration = Math.min(SAMPLE_FADE_SECONDS, duration / 2);
     const fadeOutDuration = Math.min(SAMPLE_FADE_SECONDS, duration / 2);
     const endTime = time + duration;
 
     source.buffer = instrument.buffer;
+    source.playbackRate.setValueAtTime(playbackRate, time);
     gain.gain.setValueAtTime(0, time);
     gain.gain.linearRampToValueAtTime(volume, time + fadeInDuration);
 
