@@ -142,6 +142,47 @@
         color: rgba(255, 255, 255, 0.6);
         line-height: 1.5;
       }
+
+      .sample-editor {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px 12px;
+        background: rgba(0, 0, 0, 0.25);
+        border-radius: 6px;
+      }
+
+      .sample-editor-header {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        font-size: 0.9rem;
+      }
+
+      .sample-editor-header select {
+        background: rgb(40, 90, 100);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-family: inherit;
+      }
+
+      .sample-editor-loop {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-left: 8px;
+        cursor: pointer;
+      }
+
+      .sample-canvas {
+        display: block;
+        max-width: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        background: rgb(15, 30, 36);
+      }
     </style>
   </head>
   <body>
@@ -151,6 +192,7 @@
     </div>
     <div id="toolbar"></div>
     <div id="grid"></div>
+    <div id="sample-editor"></div>
     <p class="help">
       Click a cell or use arrow keys to move. Bottom keyboard row (Z S X D C V…) plays notes
       in the current octave; <kbd>[</kbd>/<kbd>]</kbd> change octave. Digits select the current

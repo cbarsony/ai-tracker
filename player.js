@@ -21,7 +21,16 @@ export class Player {
     this.currentRowIndex = -1;
     this.instrumentBuffers = null;
     this.activeSampleNodes = new Set();
+    // Per-channel currently-playing looped voice; needs explicit cutoff.
+    this.channelLoopVoices = new Map();
     this.onRowChange = null;
+    this.onInstrumentsLoaded = null;
+  }
+
+  getBuffer(instrumentIndex) {
+    if (!this.instrumentBuffers) return null;
+    const entry = this.instrumentBuffers[instrumentIndex];
+    return entry ? entry.buffer : null;
   }
 
   isPlaying() {
@@ -47,6 +56,7 @@ export class Player {
     }
 
     this.fadeOutActiveSamples();
+    this.channelLoopVoices.clear();
     this.currentRowIndex = -1;
     if (this.onRowChange) {
       this.onRowChange(-1);
@@ -67,7 +77,43 @@ export class Player {
       return;
     }
 
-    this.playSample(instrument, note, this.audioContext.currentTime);
+    this.playSample(instrument, note, this.audioContext.currentTime, null);
+  }
+
+  // Play a single voice for the sample editor and return a handle that the
+  // caller can use to query the playhead position or stop playback.
+  async previewInstrument(instrumentIndex, note) {
+    await this.initAudio();
+    await this.audioContext.resume();
+
+    const instrument = this.instrumentBuffers[instrumentIndex];
+    if (!instrument) {
+      return null;
+    }
+
+    const startTime = this.audioContext.currentTime;
+    const playbackRate = notePitch(
+      note,
+      instrument.rootNote ?? DEFAULT_ROOT_NOTE,
+    );
+    const sampleNode = this.playSample(instrument, note, startTime, null);
+    if (!sampleNode) return null;
+
+    let stopped = false;
+    sampleNode.source.addEventListener("ended", () => {
+      stopped = true;
+    });
+
+    return {
+      startTime,
+      playbackRate,
+      isStopped: () => stopped,
+      stop: () => {
+        if (stopped) return;
+        stopped = true;
+        this.fadeOutSampleAt(sampleNode, this.audioContext.currentTime);
+      },
+    };
   }
 
   async initAudio() {
@@ -77,6 +123,9 @@ export class Player {
 
     if (!this.instrumentBuffers) {
       this.instrumentBuffers = await this.loadInstruments(this.song.instruments);
+      if (this.onInstrumentsLoaded) {
+        this.onInstrumentsLoaded();
+      }
     }
   }
 
@@ -141,9 +190,14 @@ export class Player {
     if (!Array.isArray(row)) {
       return;
     }
-    for (const cell of row) {
-      if (isEmpty(cell) || cell.note === NOTE_OFF) {
-        continue;
+    row.forEach((cell, channel) => {
+      if (isEmpty(cell)) {
+        return;
+      }
+
+      if (cell.note === NOTE_OFF) {
+        this.cutChannelLoopVoice(channel, time);
+        return;
       }
 
       const instrument = this.instrumentBuffers[cell.instrument];
@@ -151,28 +205,54 @@ export class Player {
         throw new Error(`Unknown instrument number: ${cell.instrument}`);
       }
 
-      this.playSample(instrument, cell.note, time);
-    }
+      // A new note on this channel always cuts any still-playing looped voice.
+      this.cutChannelLoopVoice(channel, time);
+      this.playSample(instrument, cell.note, time, channel);
+    });
   }
 
-  playSample(instrument, note, time) {
+  cutChannelLoopVoice(channel, time) {
+    const voice = this.channelLoopVoices.get(channel);
+    if (!voice) return;
+    this.channelLoopVoices.delete(channel);
+    this.fadeOutSampleAt(voice, time);
+  }
+
+  playSample(instrument, note, time, channel) {
     const source = this.audioContext.createBufferSource();
     const gain = this.audioContext.createGain();
     const volume = instrument.volume ?? 1;
     const playbackRate = notePitch(note, instrument.rootNote ?? DEFAULT_ROOT_NOTE);
-    const duration = instrument.buffer.duration / playbackRate;
-    const fadeInDuration = Math.min(SAMPLE_FADE_SECONDS, duration / 2);
-    const fadeOutDuration = Math.min(SAMPLE_FADE_SECONDS, duration / 2);
-    const endTime = time + duration;
+    const loop = instrument.loop;
+    const looping = !!(loop && loop.enabled);
 
     source.buffer = instrument.buffer;
     source.playbackRate.setValueAtTime(playbackRate, time);
+
+    if (looping) {
+      source.loop = true;
+      source.loopStart = Math.max(0, loop.start ?? 0);
+      source.loopEnd = Math.min(
+        instrument.buffer.duration,
+        loop.end ?? instrument.buffer.duration,
+      );
+    }
+
+    const fadeInDuration = looping
+      ? SAMPLE_FADE_SECONDS
+      : Math.min(SAMPLE_FADE_SECONDS, (instrument.buffer.duration / playbackRate) / 2);
+
     gain.gain.setValueAtTime(0, time);
     gain.gain.linearRampToValueAtTime(volume, time + fadeInDuration);
 
-    if (endTime > time + fadeOutDuration) {
-      gain.gain.setValueAtTime(volume, endTime - fadeOutDuration);
-      gain.gain.linearRampToValueAtTime(0, endTime);
+    if (!looping) {
+      const duration = instrument.buffer.duration / playbackRate;
+      const fadeOutDuration = Math.min(SAMPLE_FADE_SECONDS, duration / 2);
+      const endTime = time + duration;
+      if (endTime > time + fadeOutDuration) {
+        gain.gain.setValueAtTime(volume, endTime - fadeOutDuration);
+        gain.gain.linearRampToValueAtTime(0, endTime);
+      }
     }
 
     source.connect(gain);
@@ -184,6 +264,29 @@ export class Player {
       this.activeSampleNodes.delete(sampleNode);
     });
     source.start(time);
+
+    if (looping && channel !== null && channel !== undefined) {
+      this.channelLoopVoices.set(channel, sampleNode);
+    }
+
+    return sampleNode;
+  }
+
+  fadeOutSampleAt(sampleNode, time) {
+    const { source, gain } = sampleNode;
+    const stopTime = time + SAMPLE_FADE_SECONDS;
+    if (typeof gain.gain.cancelAndHoldAtTime === "function") {
+      gain.gain.cancelAndHoldAtTime(time);
+    } else {
+      gain.gain.cancelScheduledValues(time);
+      gain.gain.setValueAtTime(gain.gain.value, time);
+    }
+    gain.gain.linearRampToValueAtTime(0, stopTime);
+    try {
+      source.stop(stopTime);
+    } catch {
+      this.activeSampleNodes.delete(sampleNode);
+    }
   }
 
   fadeOutActiveSamples() {
