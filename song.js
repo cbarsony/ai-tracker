@@ -1,21 +1,31 @@
+// Each cell is either null (empty) or { note, instrument }.
+// `note` is a MIDI number, or NOTE_OFF (-1) to stop the previous sample.
+// `instrument` is the index into the `instruments` array below.
+const K0 = { note: 60, instrument: 0 };
+const K1 = { note: 60, instrument: 1 };
+const K2 = { note: 60, instrument: 2 };
+const E3 = { note: 52, instrument: 3 };
+const G3 = { note: 55, instrument: 3 };
+const D3 = { note: 50, instrument: 3 };
+
 const pattern = [
-  //       00         01         02         03
-  /*00*/ ["C-400---", "--------", "--------", "--------"],
-  /*01*/ ["--------", "--------", "--------", "--------"],
-  /*02*/ ["C-402---", "E-303---", "--------", "--------"],
-  /*03*/ ["--------", "--------", "--------", "--------"],
-  /*04*/ ["C-401---", "--------", "--------", "--------"],
-  /*05*/ ["--------", "--------", "--------", "--------"],
-  /*06*/ ["C-402---", "E-303---", "--------", "--------"],
-  /*07*/ ["--------", "--------", "--------", "--------"],
-  /*08*/ ["C-400---", "--------", "--------", "--------"],
-  /*09*/ ["--------", "--------", "--------", "--------"],
-  /*10*/ ["C-402---", "G-303---", "--------", "--------"],
-  /*11*/ ["--------", "--------", "--------", "--------"],
-  /*12*/ ["C-401---", "--------", "--------", "--------"],
-  /*13*/ ["--------", "D-303---", "--------", "--------"],
-  /*14*/ ["C-400---", "--------", "--------", "--------"],
-  /*15*/ ["--------", "--------", "--------", "--------"],
+  //  ch 0  ch 1  ch 2  ch 3
+  [K0, null, null, null],
+  [null, null, null, null],
+  [K2, E3, null, null],
+  [null, null, null, null],
+  [K1, null, null, null],
+  [null, null, null, null],
+  [K2, E3, null, null],
+  [null, null, null, null],
+  [K0, null, null, null],
+  [null, null, null, null],
+  [K2, G3, null, null],
+  [null, null, null, null],
+  [K1, null, null, null],
+  [null, D3, null, null],
+  [K0, null, null, null],
+  [null, null, null, null],
 ];
 
 const instruments = [

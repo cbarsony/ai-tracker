@@ -1,4 +1,4 @@
-import { NOTE_OFF, parseCell } from "./cell.js";
+import { NOTE_OFF, isEmpty } from "./cell.js";
 
 const LOOKAHEAD_MS = 25;
 const SCHEDULE_AHEAD_SECONDS = 0.1;
@@ -18,9 +18,10 @@ export class Player {
     this.timerId = null;
     this.nextRowTime = 0;
     this.nextRowIndex = 0;
-    this.parsedPattern = null;
+    this.currentRowIndex = -1;
     this.instrumentBuffers = null;
     this.activeSampleNodes = new Set();
+    this.onRowChange = null;
   }
 
   isPlaying() {
@@ -31,8 +32,8 @@ export class Player {
     await this.initAudio();
     await this.audioContext.resume();
 
-    this.parsedPattern = this.buildPattern(this.song);
     this.nextRowIndex = 0;
+    this.currentRowIndex = -1;
     this.nextRowTime = this.audioContext.currentTime;
 
     this.schedulerTick();
@@ -46,6 +47,10 @@ export class Player {
     }
 
     this.fadeOutActiveSamples();
+    this.currentRowIndex = -1;
+    if (this.onRowChange) {
+      this.onRowChange(-1);
+    }
   }
 
   async initAudio() {
@@ -77,36 +82,50 @@ export class Player {
     return this.audioContext.decodeAudioData(await response.arrayBuffer());
   }
 
-  buildPattern(song) {
-    const columnCount = song.pattern[0]?.length ?? 0;
-
-    return song.pattern.map((row, rowIndex) => {
-      if (!Array.isArray(row) || row.length !== columnCount) {
-        throw new Error(`Pattern row ${rowIndex} must have ${columnCount} columns`);
-      }
-
-      return row.map((cellText, columnIndex) =>
-        parseCell(cellText, rowIndex, columnIndex),
-      );
-    });
-  }
-
   schedulerTick() {
     const rowDuration = 60 / (BPM * ROWS_PER_BEAT);
+    const pattern = this.song.pattern;
+    if (!Array.isArray(pattern) || pattern.length === 0) {
+      return;
+    }
 
     while (
       this.nextRowTime <
       this.audioContext.currentTime + SCHEDULE_AHEAD_SECONDS
     ) {
-      this.scheduleRow(this.parsedPattern[this.nextRowIndex], this.nextRowTime);
+      if (this.nextRowIndex >= pattern.length) {
+        this.nextRowIndex = 0;
+      }
+      const row = pattern[this.nextRowIndex];
+      const scheduledRowIndex = this.nextRowIndex;
+      const scheduledTime = this.nextRowTime;
+      this.scheduleRow(row, scheduledTime);
+      this.scheduleRowHighlight(scheduledRowIndex, scheduledTime);
       this.nextRowTime += rowDuration;
-      this.nextRowIndex = (this.nextRowIndex + 1) % this.parsedPattern.length;
+      this.nextRowIndex = (this.nextRowIndex + 1) % pattern.length;
     }
   }
 
+  scheduleRowHighlight(rowIndex, time) {
+    if (!this.onRowChange) {
+      return;
+    }
+    const delayMs = Math.max(0, (time - this.audioContext.currentTime) * 1000);
+    setTimeout(() => {
+      if (this.timerId === null) {
+        return;
+      }
+      this.currentRowIndex = rowIndex;
+      this.onRowChange(rowIndex);
+    }, delayMs);
+  }
+
   scheduleRow(row, time) {
+    if (!Array.isArray(row)) {
+      return;
+    }
     for (const cell of row) {
-      if (cell.note === null || cell.note === NOTE_OFF) {
+      if (isEmpty(cell) || cell.note === NOTE_OFF) {
         continue;
       }
 

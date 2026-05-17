@@ -10,10 +10,14 @@
         display: flex;
         flex-direction: column;
         gap: 16px;
-        justify-content: center;
+        justify-content: flex-start;
         align-items: center;
-        height: 100vh;
+        min-height: 100vh;
         margin: 0;
+        padding: 24px 16px;
+        box-sizing: border-box;
+        color: rgba(255, 255, 255, 0.85);
+        font-family: sans-serif;
       }
 
       #play {
@@ -54,11 +58,105 @@
         color: rgba(255, 255, 255, 0.78);
         font-family: sans-serif;
       }
+
+      #toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        padding: 8px 12px;
+        background: rgba(0, 0, 0, 0.25);
+        border-radius: 6px;
+      }
+
+      #toolbar .toolbar-button,
+      #toolbar select {
+        background: rgb(40, 90, 100);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+        padding: 4px 10px;
+        font-family: inherit;
+        cursor: pointer;
+      }
+
+      #toolbar .toolbar-button:hover {
+        background: rgb(50, 110, 125);
+      }
+
+      #grid {
+        outline: none;
+        max-width: 100%;
+        overflow: auto;
+      }
+
+      #grid:focus {
+        box-shadow: 0 0 0 2px rgba(80, 200, 220, 0.6);
+        border-radius: 4px;
+      }
+
+      .tracker-grid {
+        border-collapse: collapse;
+        font-family: "Cascadia Mono", "Consolas", "Menlo", monospace;
+        font-size: 0.95rem;
+        background: rgb(20, 40, 46);
+        color: rgb(220, 240, 245);
+      }
+
+      .tracker-grid th,
+      .tracker-grid td {
+        padding: 4px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        text-align: center;
+        white-space: pre;
+      }
+
+      .tracker-grid th {
+        background: rgba(0, 0, 0, 0.35);
+        color: rgba(255, 255, 255, 0.65);
+        font-weight: 600;
+      }
+
+      .tracker-grid td.cell.empty {
+        color: rgba(255, 255, 255, 0.35);
+      }
+
+      .tracker-grid td.cell.cursor {
+        background: rgb(40, 130, 150);
+        color: #fff;
+        outline: 1px solid rgb(120, 220, 240);
+      }
+
+      .tracker-grid tr.playing td,
+      .tracker-grid tr.playing th {
+        background: rgba(255, 200, 80, 0.18);
+      }
+
+      .tracker-grid tr.playing td.cell.cursor {
+        background: rgb(60, 150, 170);
+      }
+
+      .help {
+        max-width: 720px;
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.6);
+        line-height: 1.5;
+      }
     </style>
   </head>
   <body>
-    <button id="play">Play</button>
-    <p id="status">Stopped</p>
+    <div style="display: flex; gap: 16px; align-items: center;">
+      <button id="play">Play</button>
+      <p id="status">Stopped</p>
+    </div>
+    <div id="toolbar"></div>
+    <div id="grid"></div>
+    <p class="help">
+      Click a cell or use arrow keys to move. Bottom keyboard row (Z S X D C V…) plays notes
+      in the current octave; <kbd>[</kbd>/<kbd>]</kbd> change octave. Digits select the current
+      instrument and overwrite the selected cell's instrument. <kbd>`</kbd> sets note-off,
+      <kbd>Delete</kbd> clears.
+    </p>
     <script type="module" src="main.js"></script>
   </body>
 </html>
