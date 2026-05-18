@@ -12,27 +12,32 @@ const sampleEditorContainer = document.getElementById("sample-editor");
 
 const player = new Player(song);
 const playView = new PlayView(playButton, statusText);
+let sampleEditor;
 const gridView = new GridView({
   container: gridContainer,
   toolbar,
   song,
+  onInstrumentChange: (instrumentIndex) => {
+    sampleEditor?.setInstrument(instrumentIndex);
+  },
   onPreviewNote: (note, instrument) => {
     player.previewNote(note, instrument).catch((error) => console.error(error));
   },
 });
-gridView.render();
-gridView.focus();
-
-const sampleEditor = new SampleEditor({
+sampleEditor = new SampleEditor({
   container: sampleEditorContainer,
   song,
   player,
-  getBuffer: (index) => player.getBuffer(index),
+  onInstrumentChange: (instrumentIndex) => {
+    gridView.setInstrument(instrumentIndex);
+    gridView.focus();
+  },
 });
+gridView.render();
 sampleEditor.render();
+gridView.focus();
 
 player.onRowChange = (rowIndex) => gridView.setPlayingRow(rowIndex);
-player.onInstrumentsLoaded = () => sampleEditor.refresh();
 
 async function onPlayClick() {
   playView.disable();

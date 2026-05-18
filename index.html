@@ -144,44 +144,86 @@
       }
 
       .sample-editor {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        padding: 10px 12px;
+        width: min(920px, 100%);
+        box-sizing: border-box;
+        padding: 14px;
         background: rgba(0, 0, 0, 0.25);
-        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
       }
 
       .sample-editor-header {
         display: flex;
-        gap: 10px;
+        flex-wrap: wrap;
+        gap: 12px 18px;
         align-items: center;
-        font-size: 0.9rem;
+        justify-content: space-between;
+        margin-bottom: 12px;
       }
 
-      .sample-editor-header select {
+      .sample-editor h2 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 700;
+      }
+
+      .sample-editor label {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        color: rgba(255, 255, 255, 0.78);
+      }
+
+      .sample-editor select {
         background: rgb(40, 90, 100);
         color: #fff;
         border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 4px;
-        padding: 2px 6px;
+        padding: 4px 10px;
         font-family: inherit;
       }
 
-      .sample-editor-loop {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        margin-left: 8px;
+      .sample-editor .toolbar-button {
+        background: rgb(40, 90, 100);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+        padding: 4px 10px;
+        font-family: inherit;
         cursor: pointer;
       }
 
-      .sample-canvas {
-        display: block;
-        max-width: 100%;
+      .sample-editor .toolbar-button:hover {
+        background: rgb(50, 110, 125);
+      }
+
+      .loop-toggle input {
+        width: 16px;
+        height: 16px;
+        accent-color: rgb(255, 202, 89);
+      }
+
+      .waveform-wrap {
+        width: 100%;
+        overflow: hidden;
+        border-radius: 6px;
         border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 4px;
-        background: rgb(15, 30, 36);
+        background: rgb(14, 29, 34);
+      }
+
+      .waveform-wrap canvas {
+        display: block;
+        width: 100%;
+        height: 180px;
+        cursor: crosshair;
+        touch-action: none;
+      }
+
+      .sample-editor-status {
+        min-height: 1.2em;
+        margin: 8px 0 0;
+        color: rgba(255, 255, 255, 0.68);
+        font-size: 0.85rem;
       }
     </style>
   </head>
@@ -192,7 +234,7 @@
     </div>
     <div id="toolbar"></div>
     <div id="grid"></div>
-    <div id="sample-editor"></div>
+    <section id="sample-editor" aria-label="Sample editor"></section>
     <p class="help">
       Click a cell or use arrow keys to move. Bottom keyboard row (Z S X D C V…) plays notes
       in the current octave; <kbd>[</kbd>/<kbd>]</kbd> change octave. Digits select the current
