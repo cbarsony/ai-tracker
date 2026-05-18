@@ -21,22 +21,32 @@ export class Player {
     this.parsedPattern = null;
     this.instrumentBuffers = null;
     this.activeSampleNodes = new Set();
+    this.rowChangeTimeouts = new Set();
+    this.onRowChange = null;
   }
 
   isPlaying() {
     return this.timerId !== null;
   }
 
-  async start() {
+  async start(fromRow = 0) {
     await this.initAudio();
     await this.audioContext.resume();
 
     this.parsedPattern = this.buildPattern(this.song);
-    this.nextRowIndex = 0;
+    this.nextRowIndex = fromRow % this.parsedPattern.length;
     this.nextRowTime = this.audioContext.currentTime;
 
     this.schedulerTick();
     this.timerId = setInterval(() => this.schedulerTick(), LOOKAHEAD_MS);
+  }
+
+  async previewNote(instrumentIndex, midiNote) {
+    await this.initAudio();
+    await this.audioContext.resume();
+    const instrument = this.instrumentBuffers[instrumentIndex];
+    if (!instrument) return;
+    this.playSample(instrument, midiNote, this.audioContext.currentTime);
   }
 
   stop() {
@@ -44,6 +54,9 @@ export class Player {
       clearInterval(this.timerId);
       this.timerId = null;
     }
+
+    for (const id of this.rowChangeTimeouts) clearTimeout(id);
+    this.rowChangeTimeouts.clear();
 
     this.fadeOutActiveSamples();
   }
@@ -99,9 +112,20 @@ export class Player {
       this.audioContext.currentTime + SCHEDULE_AHEAD_SECONDS
     ) {
       this.scheduleRow(this.parsedPattern[this.nextRowIndex], this.nextRowTime);
+      this.scheduleRowChangeCallback(this.nextRowIndex, this.nextRowTime);
       this.nextRowTime += rowDuration;
       this.nextRowIndex = (this.nextRowIndex + 1) % this.parsedPattern.length;
     }
+  }
+
+  scheduleRowChangeCallback(rowIndex, time) {
+    if (!this.onRowChange) return;
+    const delay = Math.max(0, (time - this.audioContext.currentTime) * 1000);
+    const id = setTimeout(() => {
+      this.rowChangeTimeouts.delete(id);
+      this.onRowChange(rowIndex);
+    }, delay);
+    this.rowChangeTimeouts.add(id);
   }
 
   scheduleRow(row, time) {
