@@ -98,6 +98,11 @@ export class Player {
   async initAudio() {
     if (!this.audioContext) {
       this.audioContext = new AudioContext();
+      this.masterAnalyser = this.audioContext.createAnalyser();
+      this.masterAnalyser.fftSize = 2048;
+      this.masterAnalyser.connect(this.audioContext.destination);
+      this._clipBuffer = new Float32Array(this.masterAnalyser.fftSize);
+      this._lastClipWarnTime = -Infinity;
     }
 
     if (!this.instrumentBuffers) {
@@ -136,7 +141,24 @@ export class Player {
     return this.audioContext.decodeAudioData(await response.arrayBuffer());
   }
 
+  checkClipping() {
+    this.masterAnalyser.getFloatTimeDomainData(this._clipBuffer);
+    let peak = 0;
+    for (let i = 0; i < this._clipBuffer.length; i++) {
+      const abs = Math.abs(this._clipBuffer[i]);
+      if (abs > peak) peak = abs;
+    }
+    if (peak > 1.0) {
+      const now = this.audioContext.currentTime;
+      if (now - this._lastClipWarnTime >= 1.0) {
+        this._lastClipWarnTime = now;
+        console.warn(`[Player] Audio clipping detected: peak level ${peak.toFixed(3)} at t=${now.toFixed(3)}s`);
+      }
+    }
+  }
+
   schedulerTick() {
+    this.checkClipping();
     const rowDuration = 60 / (BPM * ROWS_PER_BEAT);
     const pattern = this.song.pattern;
     if (!Array.isArray(pattern) || pattern.length === 0) {
@@ -236,7 +258,7 @@ export class Player {
     }
 
     source.connect(gain);
-    gain.connect(this.audioContext.destination);
+    gain.connect(this.masterAnalyser);
     const sampleNode = {
       source,
       gain,

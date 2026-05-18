@@ -32,7 +32,7 @@ const instruments = [
   {
     name: "kick",
     sample: "samples/kick-new.wav",
-    volume: 0.6,
+    volume: 0.4,
   },
   {
     name: "snare",
@@ -47,7 +47,7 @@ const instruments = [
   {
     name: "bass",
     sample: "samples/bass-new.wav",
-    volume: 0.4,
+    volume: 0.5,
   },
 ];
 
