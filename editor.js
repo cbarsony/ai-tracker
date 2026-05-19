@@ -25,16 +25,9 @@ export class PatternEditor {
     this.selectedInstrument = 0;
     this.previewNote = previewNote;
     this.onChange = onChange;
-    this.enabled = true;
-  }
-
-  setEnabled(flag) {
-    this.enabled = flag;
-    this.onChange();
   }
 
   handleKey(event) {
-    if (!this.enabled) return;
     if (event.ctrlKey || event.altKey || event.metaKey) return;
 
     switch (event.code) {

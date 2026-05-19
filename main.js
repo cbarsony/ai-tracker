@@ -3,6 +3,7 @@ import { Player } from "./player.js";
 import { song } from "./song.js";
 import { PatternEditor } from "./editor.js";
 import { GridView } from "./grid-view.js";
+import { createAppMachine } from "./app-machine.js";
 
 const PATTERN_ROWS = 64;
 
@@ -31,36 +32,23 @@ const gridView = new GridView(gridEl, instrumentSelect, octaveLabel, editor);
 gridView.init(workingSong.instruments);
 player.onRowChange = (row) => gridView.setPlayingRow(row);
 
-gridEl.addEventListener("keydown", (event) => editor.handleKey(event));
+const machine = createAppMachine({
+  editor,
+  player,
+  gridView,
+  playView,
+  getFromRow: () => (startFromCursorBox.checked ? editor.row : 0),
+});
 
-async function onPlayClick() {
-  playView.disable();
+playButton.addEventListener("click", () => {
+  machine.send("TOGGLE_PLAY");
+  gridEl.focus();
+});
 
-  try {
-    if (player.isPlaying()) {
-      player.stop();
-      gridView.setPlayingRow(null);
-      editor.setEnabled(true);
-      playView.renderStopped();
-    } else {
-      editor.setEnabled(false);
-      const fromRow = startFromCursorBox.checked ? editor.row : 0;
-      await player.start(fromRow);
-      playView.renderPlaying();
-    }
-  } catch (error) {
-    console.error(error);
-    player.stop();
-    gridView.setPlayingRow(null);
-    editor.setEnabled(true);
-    playView.renderStopped(error.message);
-  } finally {
-    playView.enable();
-    gridEl.focus();
-  }
-}
+gridEl.addEventListener("keydown", (event) => {
+  machine.send({ type: "KEY_PRESSED", domEvent: event });
+});
 
-playButton.addEventListener("click", onPlayClick);
 gridEl.focus();
 
 function padPattern(pattern, rows) {
