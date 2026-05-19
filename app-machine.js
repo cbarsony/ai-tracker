@@ -6,16 +6,13 @@
 //   playing  - the player is producing sound; editing is blocked.
 //   error    - last start attempt failed; show message, allow retry.
 //
-// Side effects (audio init, DOM updates, scheduler start/stop) live in the
-// action implementations, keeping the machine config a pure description.
-
-import { createMachine } from "./statechart.js";
+// This config is pure description; action implementations live in main.js.
 
 export const appMachineConfig = {
   initial: "editing",
   states: {
     editing: {
-      entry: "onEnterEditing",
+      entry: "resetToEditing",
       on: {
         TOGGLE_PLAY: "starting",
         KEY_PRESSED: { actions: "forwardKey" },
@@ -29,61 +26,17 @@ export const appMachineConfig = {
       },
     },
     playing: {
-      entry: "onEnterPlaying",
-      exit: "onExitPlaying",
+      entry: "activatePlayback",
+      exit: "stopPlayback",
       on: {
         TOGGLE_PLAY: "editing",
       },
     },
     error: {
-      entry: "onEnterError",
+      entry: "showError",
       on: {
         TOGGLE_PLAY: "editing",
       },
     },
   },
 };
-
-export function createAppMachine({ editor, player, gridView, playView, getFromRow }) {
-  const actions = {
-    onEnterEditing: () => {
-      playView.renderStopped();
-      playView.enable();
-      gridView.setPlayingRow(null);
-    },
-
-    forwardKey: (event) => {
-      editor.handleKey(event.domEvent);
-    },
-
-    onStartPlayback: (event) => {
-      playView.disable();
-      const fromRow = getFromRow();
-      player
-        .start(fromRow)
-        .then(() => machine.send("STARTED"))
-        .catch((error) => {
-          console.error(error);
-          machine.send({ type: "START_FAILED", error });
-        });
-    },
-
-    onEnterPlaying: () => {
-      playView.renderPlaying();
-      playView.enable();
-    },
-
-    onExitPlaying: () => {
-      player.stop();
-    },
-
-    onEnterError: (event) => {
-      const message = event.error?.message ?? "Error";
-      playView.renderStopped(message);
-      playView.enable();
-    },
-  };
-
-  const machine = createMachine(appMachineConfig, { actions });
-  return machine;
-}

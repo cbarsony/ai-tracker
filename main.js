@@ -3,7 +3,8 @@ import { Player } from "./player.js";
 import { song } from "./song.js";
 import { PatternEditor } from "./editor.js";
 import { GridView } from "./grid-view.js";
-import { createAppMachine } from "./app-machine.js";
+import { createMachine } from "./statechart.js";
+import { appMachineConfig } from "./app-machine.js";
 
 const PATTERN_ROWS = 64;
 
@@ -32,13 +33,46 @@ const gridView = new GridView(gridEl, instrumentSelect, octaveLabel, editor);
 gridView.init(workingSong.instruments);
 player.onRowChange = (row) => gridView.setPlayingRow(row);
 
-const machine = createAppMachine({
-  editor,
-  player,
-  gridView,
-  playView,
-  getFromRow: () => (startFromCursorBox.checked ? editor.row : 0),
-});
+const actions = {
+  resetToEditing: () => {
+    playView.renderStopped();
+    playView.enable();
+    gridView.setPlayingRow(null);
+  },
+
+  forwardKey: (event) => {
+    editor.handleKey(event.domEvent);
+  },
+
+  onStartPlayback: () => {
+    playView.disable();
+    const fromRow = startFromCursorBox.checked ? editor.row : 0;
+    player
+      .start(fromRow)
+      .then(() => machine.send("STARTED"))
+      .catch((error) => {
+        console.error(error);
+        machine.send({ type: "START_FAILED", error });
+      });
+  },
+
+  activatePlayback: () => {
+    playView.renderPlaying();
+    playView.enable();
+  },
+
+  stopPlayback: () => {
+    player.stop();
+  },
+
+  showError: (event) => {
+    const message = event.error?.message ?? "Error";
+    playView.renderStopped(message);
+    playView.enable();
+  },
+};
+
+const machine = createMachine(appMachineConfig, { actions });
 
 playButton.addEventListener("click", () => {
   machine.send("TOGGLE_PLAY");
