@@ -31,7 +31,7 @@ const editor = new PatternEditor(workingSong, {
 const gridView = new GridView(gridEl, instrumentSelect, octaveLabel, editor);
 
 gridView.init(workingSong.instruments);
-player.onRowChange = (row) => gridView.setPlayingRow(row);
+player.onRowChange = (row) => machine.send({ type: "ROW_CHANGED", row });
 
 const actions = {
   resetToEditing: () => {
@@ -42,6 +42,10 @@ const actions = {
 
   forwardKey: (event) => {
     editor.handleKey(event.domEvent);
+  },
+
+  scrollGrid: (event) => {
+    gridView.setPlayingRow(event.row);
   },
 
   onStartPlayback: () => {

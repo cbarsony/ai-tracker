@@ -30,6 +30,7 @@ export const appMachineConfig = {
       exit: "stopPlayback",
       on: {
         TOGGLE_PLAY: "editing",
+        ROW_CHANGED: { actions: "scrollGrid" },
       },
     },
     error: {

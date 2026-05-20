@@ -66,6 +66,7 @@ export function createMachine(config, { actions = {} } = {}) {
         runActions(config.states[target]?.entry, evt);
       }
 
+      console.log(`${evt.type} → ${current}`);
       notify();
     },
 
