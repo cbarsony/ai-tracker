@@ -30,19 +30,22 @@ export class PatternEditor {
   handleKey(event) {
     if (event.ctrlKey || event.altKey || event.metaKey) return;
 
+    if (event.key === "-") {
+      this.baseOctave = clamp(this.baseOctave - 1, 0, 8);
+      this.onChange();
+      return preventDefault(event);
+    }
+    if (event.key === "+" || event.key === "=") {
+      this.baseOctave = clamp(this.baseOctave + 1, 0, 8);
+      this.onChange();
+      return preventDefault(event);
+    }
+
     switch (event.code) {
       case "ArrowUp": this.moveRow(-1); return preventDefault(event);
       case "ArrowDown": this.moveRow(1); return preventDefault(event);
       case "ArrowLeft": this.moveSub(-1); return preventDefault(event);
       case "ArrowRight": this.moveSub(1); return preventDefault(event);
-      case "Minus":
-        this.baseOctave = clamp(this.baseOctave - 1, 0, 8);
-        this.onChange();
-        return preventDefault(event);
-      case "Equal":
-        this.baseOctave = clamp(this.baseOctave + 1, 0, 8);
-        this.onChange();
-        return preventDefault(event);
     }
 
     if (this.sub === 0) {

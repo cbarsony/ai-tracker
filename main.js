@@ -18,7 +18,6 @@ const statusText = document.getElementById("status");
 const gridEl = document.getElementById("grid");
 const instrumentSelect = document.getElementById("instrument-select");
 const octaveLabel = document.getElementById("octave");
-const startFromCursorBox = document.getElementById("start-from-cursor");
 
 const player = new Player(workingSong);
 const playView = new PlayView(playButton, statusText);
@@ -50,9 +49,8 @@ const actions = {
 
   onStartPlayback: () => {
     playView.disable();
-    const fromRow = startFromCursorBox.checked ? editor.row : 0;
     player
-      .start(fromRow)
+      .start(0)
       .then(() => machine.send("STARTED"))
       .catch((error) => {
         console.error(error);
@@ -84,6 +82,11 @@ playButton.addEventListener("click", () => {
 });
 
 gridEl.addEventListener("keydown", (event) => {
+  if (event.code === "Space") {
+    event.preventDefault();
+    machine.send("TOGGLE_PLAY");
+    return;
+  }
   machine.send({ type: "KEY_PRESSED", domEvent: event });
 });
 
