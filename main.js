@@ -1,101 +1,56 @@
-import { PlayView } from "./play-view.js";
-import { Player } from "./player.js";
-import { song } from "./song.js";
-import { PatternEditor } from "./editor.js";
-import { GridView } from "./grid-view.js";
 import { createMachine } from "./statechart.js";
 import { appMachineConfig } from "./app-machine.js";
+import { Scheduler } from "./scheduler.js";
+import { song } from "./song.js";
 
-const PATTERN_ROWS = 64;
+const BPM = 140;
+const ROWS_PER_BEAT = 4;
+const ROW_DURATION_SECONDS = 60 / (BPM * ROWS_PER_BEAT);
 
-const workingSong = {
-  instruments: song.instruments,
-  pattern: padPattern(song.pattern, PATTERN_ROWS),
-};
+// A cell whose first three chars are "---" carries no note.
+function notesInRow(row) {
+  return row
+    .map((cell, channel) => ({ channel, note: cell.slice(0, 3) }))
+    .filter(({ note }) => note !== "---");
+}
 
 const playButton = document.getElementById("play");
-const statusText = document.getElementById("status");
-const gridEl = document.getElementById("grid");
-const instrumentSelect = document.getElementById("instrument-select");
-const octaveLabel = document.getElementById("octave");
+const statusEl = document.getElementById("status");
 
-const player = new Player(workingSong);
-const playView = new PlayView(playButton, statusText);
-const editor = new PatternEditor(workingSong, {
-  previewNote: (instrument, midi) => {
-    player.previewNote(instrument, midi).catch((error) => console.error(error));
-  },
-  onChange: () => gridView.render(),
-});
-const gridView = new GridView(gridEl, instrumentSelect, octaveLabel, editor);
+let audioContext = null;
+let scheduler = null;
 
-gridView.init(workingSong.instruments);
-player.onRowChange = (row) => machine.send({ type: "ROW_CHANGED", row });
+const machine = createMachine(appMachineConfig, {
+  actions: {
+    startScheduler: () => {
+      if (!audioContext) audioContext = new AudioContext();
+      audioContext.resume();
 
-const actions = {
-  resetToEditing: () => {
-    playView.renderStopped();
-    playView.enable();
-    gridView.setPlayingRow(null);
-  },
-
-  forwardKey: (event) => {
-    editor.handleKey(event.domEvent);
-  },
-
-  scrollGrid: (event) => {
-    gridView.setPlayingRow(event.row);
-  },
-
-  onStartPlayback: () => {
-    playView.disable();
-    player
-      .start(0)
-      .then(() => machine.send("STARTED"))
-      .catch((error) => {
-        console.error(error);
-        machine.send({ type: "START_FAILED", error });
+      scheduler = new Scheduler({
+        audioContext,
+        rowDurationSeconds: ROW_DURATION_SECONDS,
+        onNextRow: (event) => machine.send({ type: "NEXT_ROW", ...event }),
       });
+      scheduler.start();
+    },
+    stopScheduler: () => {
+      scheduler?.stop();
+      scheduler = null;
+    },
+    logNextRow: (event) => {
+      const row = song.pattern[event.rowIndex % song.pattern.length];
+      const notes = notesInRow(row);
+      const notesText = notes.length
+        ? " notes: " + notes.map((n) => `ch${n.channel}=${n.note}`).join(", ")
+        : "";
+      console.log(`row ${event.rowIndex} @ ${event.time.toFixed(3)}s${notesText}`);
+    },
   },
-
-  activatePlayback: () => {
-    playView.renderPlaying();
-    playView.enable();
-  },
-
-  stopPlayback: () => {
-    player.stop();
-  },
-
-  showError: (event) => {
-    const message = event.error?.message ?? "Error";
-    playView.renderStopped(message);
-    playView.enable();
-  },
-};
-
-const machine = createMachine(appMachineConfig, { actions });
-
-playButton.addEventListener("click", () => {
-  machine.send("TOGGLE_PLAY");
-  gridEl.focus();
 });
 
-gridEl.addEventListener("keydown", (event) => {
-  if (event.code === "Space") {
-    event.preventDefault();
-    machine.send("TOGGLE_PLAY");
-    return;
-  }
-  machine.send({ type: "KEY_PRESSED", domEvent: event });
+machine.subscribe((state) => {
+  statusEl.textContent = state === "playing" ? "Playing" : "Stopped";
+  playButton.textContent = state === "playing" ? "Stop" : "Play";
 });
 
-gridEl.focus();
-
-function padPattern(pattern, rows) {
-  const channels = pattern[0].length;
-  const emptyRow = () => Array.from({ length: channels }, () => "--------");
-  const result = pattern.map((row) => row.slice());
-  while (result.length < rows) result.push(emptyRow());
-  return result;
-}
+playButton.addEventListener("click", () => machine.send("TOGGLE_PLAY"));

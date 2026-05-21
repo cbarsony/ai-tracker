@@ -1,42 +1,24 @@
-// App-level statechart: orchestrates the high-level edit/play lifecycle.
+// App-level statechart config.
 //
-// States:
-//   editing  - user can edit the pattern; key events are forwarded to the editor.
-//   starting - audio is initialising and playback is being kicked off.
-//   playing  - the player is producing sound; editing is blocked.
-//   error    - last start attempt failed; show message, allow retry.
-//
-// This config is pure description; action implementations live in main.js.
+// For now the machine has only two states and one job: log every NEXT_ROW
+// event that the Scheduler emits while we are in `playing`. As the app grows
+// this is where higher-level orchestration (start/stop, error handling,
+// editing vs playing) will live.
 
 export const appMachineConfig = {
-  initial: "editing",
+  initial: "idle",
   states: {
-    editing: {
-      entry: "resetToEditing",
+    idle: {
       on: {
-        TOGGLE_PLAY: "starting",
-        KEY_PRESSED: { actions: "forwardKey" },
-      },
-    },
-    starting: {
-      entry: "onStartPlayback",
-      on: {
-        STARTED: "playing",
-        START_FAILED: "error",
+        TOGGLE_PLAY: "playing",
       },
     },
     playing: {
-      entry: "activatePlayback",
-      exit: "stopPlayback",
+      entry: "startScheduler",
+      exit: "stopScheduler",
       on: {
-        TOGGLE_PLAY: "editing",
-        ROW_CHANGED: { actions: "scrollGrid" },
-      },
-    },
-    error: {
-      entry: "showError",
-      on: {
-        TOGGLE_PLAY: "editing",
+        TOGGLE_PLAY: "idle",
+        NEXT_ROW: { actions: "logNextRow" },
       },
     },
   },
