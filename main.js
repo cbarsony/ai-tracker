@@ -27,10 +27,26 @@ class Scheduler {
     this.nextRowTime = this.getTime();
     this.timerId = setInterval(() => {
       const rowDuration = 60 / (BPM * ROWS_PER_BEAT);
-      console.log("tick");
-      while (this.nextRowTime < this.getTime() + LOOKAHEAD_TIME) {
-        console.log("schedule");
-        this.scheduleRow();
+      // DESIGN CHOICE: Use 'if' instead of 'while' for scheduling rows.
+      // This means if the JS thread is delayed and multiple rows fall into the lookahead window,
+      // only one row will be scheduled and the rest will be skipped (rare with a large lookahead).
+      // Rationale: Skipped notes are less musically disturbing than delayed notes (which sound sloppy).
+      // This keeps all played notes tightly in time, at the cost of rare skips during heavy browser stalls.
+
+      // Detect and warn if a note (row) is skipped due to a delayed tick.
+      const now = this.getTime();
+      let skipped = 0;
+      while (this.nextRowTime < now) {
+        // The nextRowTime is already in the past, so it was missed/skipped.
+        skipped++;
+        this.nextRowTime += rowDuration;
+      }
+      if (skipped > 0) {
+        console.warn(`Scheduler: Skipped ${skipped} row(s) due to delayed tick at ${now.toFixed(3)}s.`);
+      }
+
+      if (this.nextRowTime < now + LOOKAHEAD_TIME) {
+        this.scheduleRow(this.nextRowTime);
         this.nextRowTime += rowDuration;
       }
     }, INTERVAL_TIME);
@@ -40,8 +56,8 @@ class Scheduler {
     clearInterval(this.timerId);
   }
 
-  scheduleRow() {
-    console.log("schedule row");
+  scheduleRow(time) {
+    console.log("schedule row", time);
   }
 }
 
