@@ -8,8 +8,8 @@ const ROWS_PER_BEAT = 4;
 /** milliseconds */
 const INTERVAL_TIME = 25;
 
-/** milliseconds */
-const LOOKAHEAD_TIME = 100;
+/** seconds */
+const LOOKAHEAD_TIME = 0.1;
 
 const playButton = document.getElementById("play");
 
@@ -24,11 +24,12 @@ class Scheduler {
   }
 
   start() {
-    this.nextRowTime = Date.now(); // TODO: use precise audio clock here
+    this.nextRowTime = this.getTime();
     this.timerId = setInterval(() => {
       const rowDuration = 60 / (BPM * ROWS_PER_BEAT);
       console.log("tick");
-      while (this.nextRowTime < Date.now() + LOOKAHEAD_TIME) {
+      while (this.nextRowTime < this.getTime() + LOOKAHEAD_TIME) {
+        console.log("schedule");
         this.scheduleRow();
         this.nextRowTime += rowDuration;
       }
@@ -91,7 +92,10 @@ const machine = createMachine(
     actions: {
       onStartPlayback: () => {
         if (!audioContext) audioContext = new AudioContext();
-        player.start(audioContext);
+        player
+          .start(audioContext)
+          .then(() => machine.send("STARTED"))
+          .catch(() => machine.send("START_FAILED"));
       },
       startScheduler: () => {
         scheduler.start();
