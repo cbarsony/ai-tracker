@@ -21,6 +21,7 @@ export class Player {
     this.currentRowIndex = -1;
     this.instrumentBuffers = null;
     this.activeSampleNodes = new Set();
+    this.rowChangeTimeouts = new Set();
     this.onRowChange = null;
   }
 
@@ -28,16 +29,24 @@ export class Player {
     return this.timerId !== null;
   }
 
-  async start() {
+  async start(fromRow = 0) {
     await this.initAudio();
     await this.audioContext.resume();
 
-    this.nextRowIndex = 0;
-    this.currentRowIndex = -1;
+    this.parsedPattern = this.buildPattern(this.song);
+    this.nextRowIndex = fromRow % this.parsedPattern.length;
     this.nextRowTime = this.audioContext.currentTime;
 
     this.schedulerTick();
     this.timerId = setInterval(() => this.schedulerTick(), LOOKAHEAD_MS);
+  }
+
+  async previewNote(instrumentIndex, midiNote) {
+    await this.initAudio();
+    await this.audioContext.resume();
+    const instrument = this.instrumentBuffers[instrumentIndex];
+    if (!instrument) return;
+    this.playSample(instrument, midiNote, this.audioContext.currentTime);
   }
 
   stop() {
@@ -45,6 +54,9 @@ export class Player {
       clearInterval(this.timerId);
       this.timerId = null;
     }
+
+    for (const id of this.rowChangeTimeouts) clearTimeout(id);
+    this.rowChangeTimeouts.clear();
 
     this.fadeOutActiveSamples();
     this.currentRowIndex = -1;
@@ -110,31 +122,21 @@ export class Player {
       this.nextRowTime <
       this.audioContext.currentTime + SCHEDULE_AHEAD_SECONDS
     ) {
-      if (this.nextRowIndex >= pattern.length) {
-        this.nextRowIndex = 0;
-      }
-      const row = pattern[this.nextRowIndex];
-      const scheduledRowIndex = this.nextRowIndex;
-      const scheduledTime = this.nextRowTime;
-      this.scheduleRow(row, scheduledTime);
-      this.scheduleRowHighlight(scheduledRowIndex, scheduledTime);
+      this.scheduleRow(this.parsedPattern[this.nextRowIndex], this.nextRowTime);
+      this.scheduleRowChangeCallback(this.nextRowIndex, this.nextRowTime);
       this.nextRowTime += rowDuration;
-      this.nextRowIndex = (this.nextRowIndex + 1) % pattern.length;
+      this.nextRowIndex = (this.nextRowIndex + 1) % this.parsedPattern.length;
     }
   }
 
-  scheduleRowHighlight(rowIndex, time) {
-    if (!this.onRowChange) {
-      return;
-    }
-    const delayMs = Math.max(0, (time - this.audioContext.currentTime) * 1000);
-    setTimeout(() => {
-      if (this.timerId === null) {
-        return;
-      }
-      this.currentRowIndex = rowIndex;
+  scheduleRowChangeCallback(rowIndex, time) {
+    if (!this.onRowChange) return;
+    const delay = Math.max(0, (time - this.audioContext.currentTime) * 1000);
+    const id = setTimeout(() => {
+      this.rowChangeTimeouts.delete(id);
       this.onRowChange(rowIndex);
-    }, delayMs);
+    }, delay);
+    this.rowChangeTimeouts.add(id);
   }
 
   scheduleRow(row, time) {
