@@ -1,56 +1,106 @@
 import { createMachine } from "./statechart.js";
-import { appMachineConfig } from "./app-machine.js";
-import { Scheduler } from "./scheduler.js";
 import { song } from "./song.js";
 
 const BPM = 140;
-const ROWS_PER_BEAT = 4;
-const ROW_DURATION_SECONDS = 60 / (BPM * ROWS_PER_BEAT);
 
-// A cell whose first three chars are "---" carries no note.
-function notesInRow(row) {
-  return row
-    .map((cell, channel) => ({ channel, note: cell.slice(0, 3) }))
-    .filter(({ note }) => note !== "---");
-}
+const ROWS_PER_BEAT = 4;
+
+/** milliseconds */
+const INTERVAL_TIME = 25;
+
+/** milliseconds */
+const LOOKAHEAD_TIME = 100;
 
 const playButton = document.getElementById("play");
-const statusEl = document.getElementById("status");
 
+// TODO: add jsdoc
 let audioContext = null;
-let scheduler = null;
 
-const machine = createMachine(appMachineConfig, {
-  actions: {
-    startScheduler: () => {
-      if (!audioContext) audioContext = new AudioContext();
-      audioContext.resume();
+class Scheduler {
+  constructor(getTime) {
+    this.nextRowTime = null;
+    this.timerId = null;
+    this.getTime = getTime;
+  }
 
-      scheduler = new Scheduler({
-        audioContext,
-        rowDurationSeconds: ROW_DURATION_SECONDS,
-        onNextRow: (event) => machine.send({ type: "NEXT_ROW", ...event }),
-      });
-      scheduler.start();
-    },
-    stopScheduler: () => {
-      scheduler?.stop();
-      scheduler = null;
-    },
-    logNextRow: (event) => {
-      const row = song.pattern[event.rowIndex % song.pattern.length];
-      const notes = notesInRow(row);
-      const notesText = notes.length
-        ? " notes: " + notes.map((n) => `ch${n.channel}=${n.note}`).join(", ")
-        : "";
-      console.log(`row ${event.rowIndex} @ ${event.time.toFixed(3)}s${notesText}`);
+  start() {
+    this.nextRowTime = Date.now(); // TODO: use precise audio clock here
+    this.timerId = setInterval(() => {
+      const rowDuration = 60 / (BPM * ROWS_PER_BEAT);
+      console.log("tick");
+      while (this.nextRowTime < Date.now() + LOOKAHEAD_TIME) {
+        this.scheduleRow();
+        this.nextRowTime += rowDuration;
+      }
+    }, INTERVAL_TIME);
+  }
+
+  stop() {
+    clearInterval(this.timerId);
+  }
+
+  scheduleRow() {
+    console.log("schedule row");
+  }
+}
+
+class Player {
+  async start(audioContext) {
+    await audioContext.resume();
+  }
+}
+
+const scheduler = new Scheduler(() => audioContext.currentTime);
+
+const player = new Player();
+
+const machine = createMachine(
+  {
+    /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAOklwBcCoBiAFQHkBxJgGQFEB9ABVYEEAmgG0ADAF1EoAA4B7WJVwz8kkAA9EAVgBMADhIBGHQHZtAZi0AWcwE5rFgDQgAnon3mSIz550bfR29YaAL5BjmhYeISksBToAE5U+LQAynR8AEp07AAiohJIILLyVEoq6ggaAGxaJLr6ulpa1jqVFhb6ji4IOvokGl4iWiJW+ho6FlohYRg4BMQkMfGJKWmZnABifACSHLniKkUKpQXl1iK9OnUWvpajIhqdroZ9OqamFiLWlZe+GqZTIHCsyiJCkABt0E5qPRmGwuLxBHkDnIjsoTogtBojCRjP1dO1Kp82g5nBjfCQTJ59CIjK1hjoRDoAUDIvNwZDoQA5dgADTonHSDAA6kiCocSmjQOUjHp+jLTCJzFojKNMY8ENZsZiqRpqVpTPpqvpmTNWaQwHE4jI4jCWBwePxhPsxSiJWVEGcaqZKZYjBZNYYHqSEFpKr03m8rEYFTpY0yAfgZBA4CoWXMiMjiopJWpEABaDrBvMaEgBMvl5qVE0RdNkCAKJKZ1HuhAEgy43RGGX3MOVdWYyq1frnXX6ZoWSpGavA+aLBLUJtu9EIb6D4eDUyE7RhrTqwIvSP6CdjqzDadm0EQqGNl1Z45SxAWIzqsfWPoDVq2SpjJ-n2sWq04kXbMW2pQkSG+ExMX0GDvkVftGhIAlJ0qSpvUVQx-hCIIgA */
+    initial: "editing",
+    states: {
+      editing: {
+        on: {
+          TOGGLE_PLAY: "starting",
+        },
+      },
+      starting: {
+        entry: "onStartPlayback",
+        on: {
+          STARTED: "playing",
+          START_FAILED: "error",
+        },
+      },
+      playing: {
+        entry: "startScheduler",
+        exit: "stopScheduler",
+        on: {
+          TOGGLE_PLAY: "editing",
+          NEXT_ROW: { actions: "logNextRow" },
+        },
+      },
+      error: {
+        entry: "showError",
+        on: {
+          TOGGLE_PLAY: "editing",
+        },
+      },
     },
   },
-});
-
-machine.subscribe((state) => {
-  statusEl.textContent = state === "playing" ? "Playing" : "Stopped";
-  playButton.textContent = state === "playing" ? "Stop" : "Play";
-});
+  {
+    actions: {
+      onStartPlayback: () => {
+        if (!audioContext) audioContext = new AudioContext();
+        player.start(audioContext);
+      },
+      startScheduler: () => {
+        scheduler.start();
+      },
+      stopScheduler: () => {
+        scheduler.stop();
+      },
+    },
+  },
+);
 
 playButton.addEventListener("click", () => machine.send("TOGGLE_PLAY"));
