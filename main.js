@@ -2,73 +2,110 @@ import { createMachine } from "./statechart.js";
 import { song } from "./song.js";
 
 const BPM = 140;
-
 const ROWS_PER_BEAT = 4;
 
-/** milliseconds */
-const INTERVAL_TIME = 25;
+// ---- Note parsing ----
 
-/** seconds */
-const LOOKAHEAD_TIME = 0.1;
+const NOTE_SEMITONES = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const BASE_SEMITONES = 4 * 12; // samples are tuned to C4
 
-const playButton = document.getElementById("play");
+function parseCell(cell) {
+  if (cell === "--------") return null;
+  return {
+    noteName: cell[0],
+    accidental: cell[1],
+    octave: parseInt(cell[2]),
+    instrumentIndex: parseInt(cell.slice(3, 5)),
+    effectType: cell[5],
+    effectParam: cell.slice(6, 8),
+  };
+}
 
-// TODO: add jsdoc
-let audioContext = null;
+// ---- Schedule building ----
 
-class Scheduler {
-  constructor(getTime) {
-    this.nextRowTime = null;
-    this.timerId = null;
-    this.getTime = getTime;
+function buildSchedule(song, startBpm, startRow = 0) {
+  let bpm = startBpm;
+  let time = 0;
+  let startTime = 0;
+  const events = [];
+
+  for (let rowIndex = 0; rowIndex < song.pattern.length; rowIndex++) {
+    if (rowIndex === startRow) startTime = time;
+    const stepDuration = 60 / (bpm * ROWS_PER_BEAT);
+
+    for (const cell of song.pattern[rowIndex]) {
+      const parsed = parseCell(cell);
+      if (!parsed) continue;
+
+      if (parsed.effectType === "T") {
+        bpm = parseInt(parsed.effectParam, 16);
+      }
+
+      if (parsed.noteName !== "-" && rowIndex >= startRow) {
+        const semitones =
+          NOTE_SEMITONES[parsed.noteName] +
+          parsed.octave * 12 +
+          (parsed.accidental === "#" ? 1 : 0);
+        const playbackRate = 2 ** ((semitones - BASE_SEMITONES) / 12);
+        events.push({ time: time - startTime, instrumentIndex: parsed.instrumentIndex, playbackRate });
+      }
+    }
+
+    time += stepDuration;
   }
 
-  start() {
-    this.nextRowTime = this.getTime();
-    this.timerId = setInterval(() => {
-      const rowDuration = 60 / (BPM * ROWS_PER_BEAT);
-      // DESIGN CHOICE: Use 'if' instead of 'while' for scheduling rows.
-      // This means if the JS thread is delayed and multiple rows fall into the lookahead window,
-      // only one row will be scheduled and the rest will be skipped (rare with a large lookahead).
-      // Rationale: Skipped notes are less musically disturbing than delayed notes (which sound sloppy).
-      // This keeps all played notes tightly in time, at the cost of rare skips during heavy browser stalls.
+  return events;
+}
 
-      // Detect and warn if a note (row) is skipped due to a delayed tick.
-      const now = this.getTime();
-      let skipped = 0;
-      while (this.nextRowTime < now) {
-        // The nextRowTime is already in the past, so it was missed/skipped.
-        skipped++;
-        this.nextRowTime += rowDuration;
-      }
-      if (skipped > 0) {
-        console.warn(`Scheduler: Skipped ${skipped} row(s) due to delayed tick at ${now.toFixed(3)}s.`);
-      }
+// ---- Player ----
 
-      if (this.nextRowTime < now + LOOKAHEAD_TIME) {
-        this.scheduleRow(this.nextRowTime);
-        this.nextRowTime += rowDuration;
-      }
-    }, INTERVAL_TIME);
+class Player {
+  constructor() {
+    this.audioBuffers = null;
+    this.scheduledNodes = [];
+  }
+
+  async loadSamples(audioContext) {
+    if (this.audioBuffers) return;
+    this.audioBuffers = await Promise.all(
+      song.instruments.map(async ({ sample }) => {
+        const res = await fetch(sample);
+        const buf = await res.arrayBuffer();
+        return audioContext.decodeAudioData(buf);
+      })
+    );
+  }
+
+  scheduleAll(audioContext, startRow = 0) {
+    const events = buildSchedule(song, BPM, startRow);
+    const origin = audioContext.currentTime + 0.05;
+
+    for (const { time, instrumentIndex, playbackRate } of events) {
+      const { volume } = song.instruments[instrumentIndex];
+
+      const gain = audioContext.createGain();
+      gain.gain.value = volume;
+      gain.connect(audioContext.destination);
+
+      const source = audioContext.createBufferSource();
+      source.buffer = this.audioBuffers[instrumentIndex];
+      source.playbackRate.value = playbackRate;
+      source.connect(gain);
+      source.start(origin + time);
+      this.scheduledNodes.push(source);
+    }
   }
 
   stop() {
-    clearInterval(this.timerId);
-  }
-
-  scheduleRow(time) {
-    console.log("schedule row", time);
-  }
-}
-
-class Player {
-  async start(audioContext) {
-    await audioContext.resume();
+    for (const node of this.scheduledNodes) {
+      try { node.stop(); } catch { /* already stopped */ }
+    }
+    this.scheduledNodes = [];
   }
 }
 
-const scheduler = new Scheduler(() => audioContext.currentTime);
-
+const playButton = document.getElementById("play");
+let audioContext = null;
 const player = new Player();
 
 const machine = createMachine(
@@ -108,17 +145,13 @@ const machine = createMachine(
     actions: {
       onStartPlayback: () => {
         if (!audioContext) audioContext = new AudioContext();
-        player
-          .start(audioContext)
+        audioContext.resume()
+          .then(() => player.loadSamples(audioContext))
           .then(() => machine.send("STARTED"))
           .catch(() => machine.send("START_FAILED"));
       },
-      startScheduler: () => {
-        scheduler.start();
-      },
-      stopScheduler: () => {
-        scheduler.stop();
-      },
+      startScheduler: () => player.scheduleAll(audioContext),
+      stopScheduler: () => player.stop(),
     },
   },
 );

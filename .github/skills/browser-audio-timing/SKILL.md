@@ -6,75 +6,101 @@ argument-hint: "Describe the timing code, bug, or browser audio scheduling task"
 
 # Browser Audio Timing
 
-Use this skill when working on browser-based music, tracker, sequencer, metronome, sampler, or drum-machine timing.
+Use this skill when working on audio timing in this project.
 
-The core reference is Chris Wilson's web.dev article, "A tale of two clocks": https://web.dev/articles/audio-scheduling
+## Project Context: AI-Human Musical Collaboration
 
-## Core Model
+This application is **not** a full-featured music tracker. Its primary goal is **AI-human musical collaboration** — a human and an AI work together to create music, where the AI can read and write the song format.
 
-Browser audio timing should coordinate two clocks:
+This goal justifies deliberate restrictions that keep the codebase simpler and the mental model cleaner. Simpler code is easier for both humans and AI to read, reason about, and modify. Complexity is only added when a restriction would genuinely break the core use case.
 
-- The Web Audio clock, `AudioContext.currentTime`, is the precision clock for sound.
-- The JavaScript clock, through `setTimeout`, `setInterval`, or `requestAnimationFrame`, is useful for periodically running scheduling code but is not precise enough to directly trigger rhythmic audio.
+## Chosen Approach: Upfront Scheduling
 
-The correct pattern is to use a JavaScript timer as a polling mechanism, then schedule actual audio events into the Web Audio timeline slightly ahead of time.
+All audio events for the entire song are scheduled at once when playback starts. There is no polling loop, no `setInterval`, and no lookahead window.
 
-## Recommended Scheduler Pattern
+### Why this works here
 
-1. Keep the next musical event time in audio-clock seconds, for example `nextNoteTime` or `nextRowTime`.
-2. Run a frequent JavaScript scheduler tick, commonly around `25ms`.
-3. On each tick, compare the next event time with `audioContext.currentTime + scheduleAheadTime`.
-4. Use a `while` loop, not an `if`, so delayed timer callbacks can catch up by scheduling multiple upcoming events.
-5. Schedule sound with Web Audio methods that accept audio-clock time, such as `source.start(time)`, `source.stop(time)`, or `AudioParam.setValueAtTime(value, time)`.
-6. Advance the next event time using the current tempo or row duration after each scheduled event.
-7. Keep the schedule-ahead window large enough to tolerate main-thread stalls but small enough that tempo, mute, stop, or pattern changes do not feel sluggish.
+- **No editing during playback.** The user cannot change the song while it is playing. This removes the main reason a live scheduler is needed (responding to edits mid-playback).
+- **Songs are short.** Memory cost for pre-scheduling all nodes is negligible (well under 5 MB for a typical song with short samples).
+- **Perfect timing.** All events are handed to the Web Audio engine at once. The engine's internal clock handles everything — no JavaScript timer drift, no missed rows.
 
-A strong default starting point is:
+### Core pattern
 
 ```js
-const lookaheadMs = 25;
-const scheduleAheadSeconds = 0.1;
+function scheduleAll(audioContext, startRow = 0) {
+  const events = buildSchedule(song, BPM, startRow);
+  const origin = audioContext.currentTime + 0.05; // small buffer for scheduling latency
 
-function schedulerTick() {
-  while (nextEventTime < audioContext.currentTime + scheduleAheadSeconds) {
-    scheduleEvent(nextEventTime);
-    advanceToNextEvent();
+  for (const { time, instrumentIndex, playbackRate } of events) {
+    const source = audioContext.createBufferSource();
+    source.buffer = audioBuffers[instrumentIndex];
+    source.playbackRate.value = playbackRate;
+    source.connect(destination);
+    source.start(origin + time);
+    scheduledNodes.push(source);
   }
+}
+
+function stop() {
+  for (const node of scheduledNodes) {
+    try { node.stop(); } catch { /* already stopped */ }
+  }
+  scheduledNodes.clear();
 }
 ```
 
+### buildSchedule: single forward pass
+
+`buildSchedule` iterates all rows once, maintaining a running `time` accumulator and current `bpm`. It returns an array of plain objects with precomputed `time` (in seconds from song start), `instrumentIndex`, and `playbackRate`.
+
+- BPM-change effects (e.g. `Txx` where `xx` is hex BPM) are applied immediately on their own row.
+- For `startRow > 0`: all rows are still iterated (so BPM changes before `startRow` are accounted for), but only events from `startRow` onward are collected. Times are normalized so row `startRow` starts at `t=0`.
+
+```js
+function buildSchedule(song, startBpm, startRow = 0) {
+  let bpm = startBpm;
+  let time = 0;
+  let startTime = 0;
+  const events = [];
+
+  for (let rowIndex = 0; rowIndex < song.pattern.length; rowIndex++) {
+    if (rowIndex === startRow) startTime = time;
+    const stepDuration = 60 / (bpm * ROWS_PER_BEAT);
+
+    for (const cell of song.pattern[rowIndex]) {
+      const parsed = parseCell(cell);
+      if (!parsed) continue;
+      if (parsed.effectType === "T") bpm = parseInt(parsed.effectParam, 16);
+      if (parsed.noteName !== "-" && rowIndex >= startRow) {
+        events.push({ time: time - startTime, instrumentIndex: parsed.instrumentIndex, playbackRate: ... });
+      }
+    }
+    time += stepDuration;
+  }
+  return events;
+}
+```
+
+## When the "Two Clocks" Pattern Is Needed Instead
+
+The classic lookahead scheduler (Chris Wilson's "A tale of two clocks") is the right choice when:
+
+- The song or pattern can be **edited while playing**.
+- **Live tempo changes** must take effect immediately, not just at the next play.
+- The application needs **looping, cue points, or dynamic pattern switching** during playback.
+
+For this project, those are out-of-scope features. Do not add the two-clocks complexity unless one of the above requirements becomes real.
+
 ## Review Checklist
 
-When evaluating timing code, check these points first:
+When evaluating timing code in this project, check:
 
-- Does audio playback use `AudioContext.currentTime` as the timing source?
-- Are audio events scheduled with Web Audio time parameters instead of started directly from `setTimeout`, `setInterval`, or `requestAnimationFrame` callbacks?
-- Is there a short scheduler interval and a larger overlapping schedule-ahead window?
-- Does the scheduler use `while (nextTime < currentTime + scheduleAhead)` so it can schedule multiple events after a delayed callback?
-- Is the next event time advanced in audio-clock seconds based on the current tempo, rows per beat, pattern step, or note duration?
-- Are tempo changes picked up by future scheduler ticks rather than requiring a fully pre-rendered schedule?
-- Does stopping playback clear future scheduler ticks, and if needed, does it also handle already scheduled sources within the lookahead window?
-- Are UI updates synchronized against the audio clock, usually inside `requestAnimationFrame`, rather than assuming the JavaScript timer callback time equals audible playback time?
-
-## Common Findings
-
-- Directly calling `source.start()` without a future `time` from a JavaScript timer causes jitter under main-thread load.
-- Scheduling an entire pattern or song far ahead gives good timing but poor responsiveness to tempo changes, stop, mute, or pattern edits.
-- Using `if` instead of `while` can miss events when the scheduler callback is delayed.
-- A lookahead that is too short can jitter or miss events; a lookahead that is too long can make controls feel delayed.
-- Stopping a scheduler does not automatically cancel `AudioBufferSourceNode`s that were already scheduled.
-
-## Applying This To Trackers
-
-For tracker-style playback:
-
-- Treat rows as musical events on the audio clock.
-- Compute row duration as `60 / (bpm * rowsPerBeat)` when one beat is a quarter-note style beat.
-- Schedule all notes in a row at the same row time.
-- Advance `nextRowTime` by one row duration after scheduling each row.
-- Keep pattern position separately from audio-clock time, wrapping or advancing order lists as appropriate.
-- Implement note-off, channel state, sample stop, and effect timing explicitly; ignoring note-off may be acceptable for one-shot drums but not for sustained samples.
+- Is `buildSchedule` a pure function (no side effects, no async)?
+- Are all `AudioBufferSourceNode`s stored so `stop()` can cancel them?
+- Is sample loading (`decodeAudioData`) done before scheduling, not during?
+- Is the small `origin` offset (`currentTime + ~0.05s`) present to avoid scheduling in the past?
+- Does `startRow` support correctly normalize times and still process earlier BPM effects?
 
 ## Answer Style
 
-When using this skill for code review, lead with whether the code follows the article's model. Then list timing risks or mismatches in severity order, with file references when available.
+When reviewing code, lead with whether it follows the upfront-scheduling model. Flag any re-introduction of polling loops or live-scheduler patterns unless there is a clear new requirement that justifies it.
