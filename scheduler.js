@@ -22,7 +22,9 @@ export function buildSchedule(song, startBpm, startRow = 0) {
     if (rowIndex >= startRow) {
       for (const cell of cells) {
         if (cell.note) {
-          events.push({ time, ...cell.note });
+          const event = { time, ...cell.note };
+          if (cell.volume !== undefined) event.volume = cell.volume;
+          events.push(event);
         }
       }
       time += 60 / (bpm * ROWS_PER_BEAT);

@@ -26,7 +26,10 @@ export class Player {
       const source = this.audioContext.createBufferSource();
       source.buffer = this.buffers[event.instrument];
       source.playbackRate.value = 2 ** ((event.midi - ROOT_NOTE) / 12);
-      source.connect(this.audioContext.destination);
+      const gain = this.audioContext.createGain();
+      gain.gain.value = event.volume !== undefined ? event.volume / 100 : 1;
+      source.connect(gain);
+      gain.connect(this.audioContext.destination);
       source.start(origin + event.time);
       this.sources.push(source);
     }
