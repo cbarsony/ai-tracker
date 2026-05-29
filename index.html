@@ -7,10 +7,144 @@
   </head>
   <body>
     <button id="play">Play</button>
-    <button id="stop">Stop</button>
-    <label
-      >from row <input id="fromRow" type="number" value="0" min="0"
-    /></label>
+    <table id="grid">
+      <!-- row 00 -->
+      <tr>
+        <th>00</th>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+      </tr>
+      <!-- row 01 -->
+      <tr>
+        <th>01</th>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+      </tr>
+      <!-- row 02 -->
+      <tr>
+        <th>02</th>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+      </tr>
+      <!-- row 03 -->
+      <tr>
+        <th>03</th>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+      </tr>
+      <!-- row 04 -->
+      <tr>
+        <th>04</th>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+      </tr>
+      <!-- row 05 -->
+      <tr>
+        <th>05</th>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+      </tr>
+      <!-- row 06 -->
+      <tr>
+        <th>06</th>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+      </tr>
+      <!-- row 07 -->
+      <tr>
+        <th>07</th>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+      </tr>
+      <!-- row 08 -->
+      <tr class="playhead">
+        <th>08</th>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+      </tr>
+      <!-- row 09 -->
+      <tr>
+        <th>09</th>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+      </tr>
+      <!-- row 10 -->
+      <tr>
+        <th>10</th>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+      </tr>
+      <!-- row 11 -->
+      <tr>
+        <th>11</th>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+      </tr>
+      <!-- row 12 -->
+      <tr>
+        <th>12</th>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+      </tr>
+      <!-- row 13 -->
+      <tr>
+        <th>13</th>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+      </tr>
+      <!-- row 14 -->
+      <tr>
+        <th>14</th>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+      </tr>
+      <!-- row 15 -->
+      <tr>
+        <th>15</th>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+      </tr>
+      <!-- row 16 -->
+      <tr>
+        <th>16</th>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+      </tr>
+    </table>
     <script type="module" src="main.js"></script>
   </body>
 </html>
