@@ -1,3 +1,5 @@
+import { hex2 } from "./cell.js";
+
 const VISIBLE_ROWS = 17;
 const CENTER = 8;
 
@@ -71,8 +73,4 @@ export class GridView {
       })
       .join("");
   }
-}
-
-function hex2(n) {
-  return n.toString(16).padStart(2, "0").toUpperCase();
 }

@@ -1,3 +1,5 @@
+import { hex2, midiToNoteText } from "./cell.js";
+
 const CHANNEL_SUBS = 4; // note, ins-hi, ins-lo, effect
 
 const NOTE_KEYS = {
@@ -10,8 +12,6 @@ const NOTE_KEYS = {
   Digit5: 18, KeyT: 19, Digit6: 20, KeyY: 21, Digit7: 22, KeyU: 23,
   KeyI: 24, Digit9: 25, KeyO: 26, Digit0: 27, KeyP: 28,
 };
-
-const NOTE_NAMES = ["C-", "C#", "D-", "D#", "E-", "F-", "F#", "G-", "G#", "A-", "A#", "B-"];
 
 export class PatternEditor {
   constructor(workingSong, { previewNote, onChange }) {
@@ -33,31 +33,31 @@ export class PatternEditor {
     if (event.key === "-") {
       this.baseOctave = clamp(this.baseOctave - 1, 0, 8);
       this.onChange();
-      return preventDefault(event);
+      return event.preventDefault();
     }
     if (event.key === "+" || event.key === "=") {
       this.baseOctave = clamp(this.baseOctave + 1, 0, 8);
       this.onChange();
-      return preventDefault(event);
+      return event.preventDefault();
     }
 
     switch (event.code) {
-      case "ArrowUp": this.moveRow(-1); return preventDefault(event);
-      case "ArrowDown": this.moveRow(1); return preventDefault(event);
-      case "ArrowLeft": this.moveSub(-1); return preventDefault(event);
-      case "ArrowRight": this.moveSub(1); return preventDefault(event);
+      case "ArrowUp": this.moveRow(-1); return event.preventDefault();
+      case "ArrowDown": this.moveRow(1); return event.preventDefault();
+      case "ArrowLeft": this.moveSub(-1); return event.preventDefault();
+      case "ArrowRight": this.moveSub(1); return event.preventDefault();
     }
 
     if (this.sub === 0) {
       if (event.code === "Delete") {
         this.writeCell("--------");
         this.moveRow(1);
-        return preventDefault(event);
+        return event.preventDefault();
       }
       if (event.code === "Backspace") {
         this.writeCell("===-----");
         this.moveRow(1);
-        return preventDefault(event);
+        return event.preventDefault();
       }
       const offset = NOTE_KEYS[event.code];
       if (offset !== undefined) {
@@ -68,7 +68,7 @@ export class PatternEditor {
           this.previewNote(this.selectedInstrument, midi);
           this.moveRow(1);
         }
-        preventDefault(event);
+        event.preventDefault();
       }
       return;
     }
@@ -78,7 +78,7 @@ export class PatternEditor {
       if (digit !== null) {
         this.editInstrumentNibble(this.sub === 1 ? 0 : 1, digit);
         this.moveRow(1);
-        preventDefault(event);
+        event.preventDefault();
       }
     }
     // sub === 3 (effect): read-only
@@ -110,19 +110,6 @@ export class PatternEditor {
     const newIns = position === 0 ? hex + insText[1] : insText[0] + hex;
     this.writeCell(noteText + newIns + cell.slice(5));
   }
-}
-
-function preventDefault(event) {
-  event.preventDefault();
-}
-
-function midiToNoteText(midi) {
-  const octave = Math.floor(midi / 12) - 1;
-  return NOTE_NAMES[midi % 12] + octave;
-}
-
-function hex2(n) {
-  return n.toString(16).padStart(2, "0").toUpperCase();
 }
 
 function parseHexDigit(code) {

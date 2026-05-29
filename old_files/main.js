@@ -31,6 +31,7 @@ const gridView = new GridView(gridEl, instrumentSelect, octaveLabel, editor);
 
 gridView.init(workingSong.instruments);
 player.onRowChange = (row) => machine.send({ type: "ROW_CHANGED", row });
+player.onEnd = () => machine.send("ENDED");
 
 const actions = {
   resetToEditing: () => {

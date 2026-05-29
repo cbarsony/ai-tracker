@@ -31,6 +31,7 @@ export const appMachineConfig = {
       on: {
         TOGGLE_PLAY: "editing",
         ROW_CHANGED: { actions: "scrollGrid" },
+        ENDED: "editing",
       },
     },
     error: {
