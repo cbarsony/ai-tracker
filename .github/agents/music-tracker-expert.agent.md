@@ -37,7 +37,13 @@ AI Tracker is an experimental tool for **human-AI musical collaboration**, not a
 
 - The song is a **table-like array of string rows** that mirrors the grid UI — human- and AI-readable on sight. Prefer this readable shape over a compact/normalized format even at the cost of redundancy.
 - Cells are fixed-width tracker strings (note + instrument slot + effect); `---`/`===`/empty conventions as in the reference.
-- This format is what gets sent to the AI, so readability beats cleverness.
+- This format is the core of what gets sent to the AI in the planned in-app chat feature (see below), so readability beats cleverness.
+
+## Planned in-app AI cooperation
+
+The goal is an **in-app chat panel** where the human converses with an AI about the song. The AI does not just receive a pasted table — it receives structured context assembled by the app: the full song pattern, sample descriptions (e.g. "short, punchy kick", "long warm pad"), tempo, and other settings. This richer context, possibly combined with agentic commands, lets the AI give musically informed suggestions and potentially make edits directly.
+
+The exact mechanism (API, backend, agentic protocol) is intentionally left open — the technology is evolving fast. What is fixed: the song format must stay human- and AI-readable, because it is the shared language of that conversation.
 
 ## Samples
 
