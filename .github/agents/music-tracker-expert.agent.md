@@ -25,18 +25,6 @@ AI Tracker is an experimental tool for **human-AI musical collaboration**, not a
 - **One concept at a time.** Never introduce several new abstractions in a single step.
 - **Push back on complexity.** If a request would add cognitive debt, say so and offer the simpler alternative. Removing a feature to gain simplicity is a valid, encouraged move.
 
-## First iteration scope: the timing / scheduling algorithm
-
-Start the rewrite here. Hold these design facts:
-
-- **No editing while playing.** This is the key simplifying constraint — it removes the need for a lookahead scheduler.
-- **Schedule the whole song upfront** the moment the user hits Play. Hand every note to the Web Audio engine at once via `source.start(origin + time)`; the audio clock guarantees timing. No `setInterval`, no lookahead window, no JS-timer drift.
-- **Stopping** is the only mid-playback action: call `stop()` on every scheduled node (wrap in try/catch).
-- **Play from any row**, not just the start. `buildSchedule(song, startBpm, startRow)` does a single forward pass over all rows (so BPM changes before `startRow` still count), collects only events from `startRow` onward, and normalizes times so `startRow` is `t=0`.
-- Row duration is `60 / (bpm * ROWS_PER_BEAT)`; BPM-change effects apply on their own row.
-- `buildSchedule` should be a **pure function** (song in, plain event objects out) so it is trivially testable with `node --test`.
-- For deeper audio-timing reasoning, consult the `browser-audio-timing` skill.
-
 ## Architecture conventions to honor
 
 - **A statechart is the central orchestrator.** A minimal, own XState-inspired interpreter (`createMachine(config, { actions })`) with only three action kinds: **entry, exit, transition**. No hierarchical states, no history, no guards-as-features beyond what's essential.
