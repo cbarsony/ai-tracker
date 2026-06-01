@@ -3,146 +3,164 @@
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-    <title>AI Tracker — timing test</title>
+    <title>AI Tracker</title>
+    <style>
+      #play {
+        margin-bottom: 8px;
+      }
+
+      #grid {
+        font-family: monospace;
+        background: #eee;
+      }
+
+      #grid tr {
+        height: 1.5em;
+      }
+
+      .playhead {
+        background: #000;
+        color: #fff;
+      }
+    </style>
   </head>
   <body>
     <button id="play">Play</button>
     <table id="grid">
-      <!-- row 00 -->
       <tr>
-        <th>00</th>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <th></th>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
       </tr>
       <!-- row 01 -->
       <tr>
-        <th>01</th>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <th></th>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
       </tr>
       <!-- row 02 -->
       <tr>
-        <th>02</th>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <th></th>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
       </tr>
       <!-- row 03 -->
       <tr>
-        <th>03</th>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <th></th>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
       </tr>
       <!-- row 04 -->
       <tr>
-        <th>04</th>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <th></th>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
       </tr>
       <!-- row 05 -->
       <tr>
-        <th>05</th>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <th></th>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
       </tr>
       <!-- row 06 -->
       <tr>
-        <th>06</th>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <th></th>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
       </tr>
       <!-- row 07 -->
       <tr>
-        <th>07</th>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <th></th>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
       </tr>
       <!-- row 08 -->
       <tr class="playhead">
-        <th>08</th>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <th></th>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
       </tr>
       <!-- row 09 -->
       <tr>
-        <th>09</th>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <th></th>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
       </tr>
       <!-- row 10 -->
       <tr>
-        <th>10</th>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <th></th>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
       </tr>
       <!-- row 11 -->
       <tr>
-        <th>11</th>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <th></th>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
       </tr>
       <!-- row 12 -->
       <tr>
-        <th>12</th>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <th></th>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
       </tr>
       <!-- row 13 -->
       <tr>
-        <th>13</th>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <th></th>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
       </tr>
       <!-- row 14 -->
       <tr>
-        <th>14</th>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <th></th>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
       </tr>
       <!-- row 15 -->
       <tr>
-        <th>15</th>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <th></th>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
       </tr>
       <!-- row 16 -->
       <tr>
-        <th>16</th>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
-        <td><span>---</span><span>-</span><span>-</span><span>---</span></td>
+        <th></th>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
+        <td><span></span><span></span><span></span><span></span></td>
       </tr>
     </table>
     <script type="module" src="main.js"></script>

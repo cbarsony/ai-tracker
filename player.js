@@ -4,11 +4,14 @@ const DEFAULT_BPM = 140;
 const ROOT_NOTE = 60; // C-4 plays each sample at its natural speed
 
 export class Player {
-  constructor(song) {
+  constructor(song, onNextRow, onSongEnd) {
     this.song = song;
     this.audioContext = null;
     this.buffers = null;
     this.sources = [];
+    this.timeouts = [];
+    this.onNextRow = onNextRow;
+    this.onSongEnd = onSongEnd;
   }
 
   async play(fromRow = 0) {
@@ -23,6 +26,26 @@ export class Player {
     const events = buildSchedule(this.song, DEFAULT_BPM, fromRow);
 
     for (const event of events) {
+      if (event.type === "tick") {
+        const timeoutId = setTimeout(() => {
+          this.onNextRow(event.row);
+        }, event.time * 1000);
+
+        this.timeouts.push(timeoutId);
+
+        continue;
+      }
+
+      if (event.type === "end") {
+        const timeoutId = setTimeout(() => {
+          this.onSongEnd();
+        }, event.time * 1000);
+
+        this.timeouts.push(timeoutId);
+
+        continue;
+      }
+
       const source = this.audioContext.createBufferSource();
       source.buffer = this.buffers[event.instrument];
       source.playbackRate.value = 2 ** ((event.midi - ROOT_NOTE) / 12);
@@ -36,12 +59,11 @@ export class Player {
   }
 
   stop() {
+    for (const id of this.timeouts) clearTimeout(id);
+    this.timeouts = [];
+
     for (const source of this.sources) {
-      try {
-        source.stop();
-      } catch {
-        // already stopped/ended
-      }
+      source.stop();
     }
     this.sources = [];
   }

@@ -1,9 +1,17 @@
 import { song } from "./song.js";
 import { Player } from "./player.js";
 import { createMachine } from "./statechart.js";
-import { appMachineConfig } from "./app-machine.js";
+import { appMachineConfig, EVENTS, ACTIONS } from "./app-machine.js";
 
-const player = new Player(song);
+const player = new Player(
+  song,
+  (row) => {
+    renderGrid(row);
+  },
+  () => {
+    trackerMachine.send({ type: EVENTS.SONG_END });
+  },
+);
 
 const playButton = document.getElementById("play");
 const grid = document.getElementById("grid");
@@ -22,13 +30,11 @@ const EMPTY = "--------";
 
 const trackerMachine = createMachine(appMachineConfig, {
   actions: {
-    startPlayback() {
+    [ACTIONS.START_PLAYBACK]() {
       player.play(0);
       playButton.textContent = "Stop";
-
-      // Start a loop to update the grid based on the current playback position.
     },
-    stopPlayback() {
+    [ACTIONS.STOP_PLAYBACK]() {
       player.stop();
       playButton.textContent = "Play";
     },
@@ -38,6 +44,17 @@ const trackerMachine = createMachine(appMachineConfig, {
 function renderGrid(focusRow) {
   for (let i = 0; i < VISIBLE_ROWS; i++) {
     const rowIdx = focusRow - CENTER + i;
+    if (rowIdx < 0 || rowIdx >= song.pattern.length) {
+      const el = rowEls[i];
+      el.th.textContent = "";
+      for (let ch = 0; ch < el.spans.length; ch++) {
+        el.spans[ch][0].textContent = "";
+        el.spans[ch][1].textContent = "";
+        el.spans[ch][2].textContent = "";
+        el.spans[ch][3].textContent = "";
+      }
+      continue;
+    }
     const row = song.pattern[rowIdx];
     const el = rowEls[i];
 
@@ -56,5 +73,5 @@ function renderGrid(focusRow) {
 renderGrid(0);
 
 document.getElementById("play").addEventListener("click", () => {
-  trackerMachine.send("TOGGLE_PLAY");
+  trackerMachine.send(EVENTS.TOGGLE_PLAY);
 });

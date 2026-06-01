@@ -1,16 +1,32 @@
+export const STATES = {
+  EDITING: "EDITING",
+  PLAYING: "PLAYING",
+};
+
+export const EVENTS = {
+  TOGGLE_PLAY: "TOGGLE_PLAY",
+  SONG_END: "SONG_END",
+};
+
+export const ACTIONS = {
+  START_PLAYBACK: "startPlayback",
+  STOP_PLAYBACK: "stopPlayback",
+};
+
 export const appMachineConfig = {
-  initial: "editing",
+  initial: STATES.EDITING,
   states: {
-    editing: {
-      entry: "stopPlayback",
+    [STATES.EDITING]: {
+      entry: ACTIONS.STOP_PLAYBACK,
       on: {
-        TOGGLE_PLAY: "playing",
+        [EVENTS.TOGGLE_PLAY]: STATES.PLAYING,
       },
     },
-    playing: {
-      entry: "startPlayback",
+    [STATES.PLAYING]: {
+      entry: ACTIONS.START_PLAYBACK,
       on: {
-        TOGGLE_PLAY: "editing",
+        [EVENTS.TOGGLE_PLAY]: STATES.EDITING,
+        [EVENTS.SONG_END]: STATES.EDITING,
       },
     },
   },

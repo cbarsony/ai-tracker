@@ -27,9 +27,14 @@ export function buildSchedule(song, startBpm, startRow = 0) {
           events.push(event);
         }
       }
+
+      events.push({ time, type: "tick", row: rowIndex });
+
       time += 60 / (bpm * ROWS_PER_BEAT);
     }
   });
+
+  events.push({ time, type: "end" });
 
   return events;
 }
