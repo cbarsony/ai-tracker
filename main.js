@@ -2,11 +2,11 @@ import { song } from "./song.js";
 import { Player } from "./player.js";
 import { createMachine } from "./statechart.js";
 import { appMachineConfig, EVENTS, ACTIONS } from "./app-machine.js";
-import { buildGrid, renderGrid } from "./grid-view.js";
+import { createGridView } from "./grid-view.js";
 
 const playButton = document.getElementById("play");
 const grid = document.getElementById("grid");
-const rowEls = buildGrid(grid, song.instruments.length);
+const renderGrid = createGridView(grid, song.instruments.length);
 
 const player = new Player(
   song,
@@ -28,7 +28,7 @@ const trackerMachine = createMachine(appMachineConfig, {
 });
 
 function render(focusRow) {
-  renderGrid(rowEls, song.pattern, focusRow);
+  renderGrid(song.pattern, focusRow);
 }
 
 render(0);
