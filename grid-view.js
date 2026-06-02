@@ -4,7 +4,7 @@ const CENTER = 8;
 
 // The six fields of a cell, in cursor order.
 // Index = cursor position. start/end slice the 8-char cell string.
-const FIELDS = [
+export const FIELDS = [
   { className: "note", start: 0, end: 3 },
   { className: "instrument_character_1", start: 3, end: 4 },
   { className: "instrument_character_2", start: 4, end: 5 },
@@ -15,16 +15,12 @@ const FIELDS = [
 
 // Builds the grid DOM and returns a render(pattern, focusRow) function.
 // The row elements stay private to this module.
-export function createGridView(
-  gridEl,
-  channelsCount,
-  cursor = { channel: 0, position: 0 },
-) {
-  const rowEls = buildRows(gridEl, channelsCount, cursor);
-  return (pattern, focusRow) => renderRows(rowEls, pattern, focusRow);
+export function createGridView(gridEl, channelsCount, cursor) {
+  const rowEls = buildRows(gridEl, channelsCount);
+  return (pattern, focusRow) => renderRows(rowEls, pattern, focusRow, cursor);
 }
 
-function buildRows(gridEl, channelsCount, cursor) {
+function buildRows(gridEl, channelsCount) {
   return Array.from({ length: VISIBLE_ROWS }, (_, row) => {
     const tr = document.createElement("tr");
     if (row === CENTER) tr.classList.add("playhead");
@@ -32,14 +28,9 @@ function buildRows(gridEl, channelsCount, cursor) {
     tr.appendChild(th);
     const spans = Array.from({ length: channelsCount }, (_, channel) => {
       const td = document.createElement("td");
-      const cellSpans = FIELDS.map((field, position) => {
+      const cellSpans = FIELDS.map((field) => {
         const s = document.createElement("span");
-        if (channel === cursor.channel) {
-          s.className =
-            position === cursor.position
-              ? `${field.className} cursor`
-              : field.className;
-        }
+        s.className = field.className;
         td.appendChild(s);
         return s;
       });
@@ -51,23 +42,25 @@ function buildRows(gridEl, channelsCount, cursor) {
   });
 }
 
-function renderRows(rowEls, pattern, focusRow) {
-  rowEls.forEach((el, i) => {
-    const rowIdx = focusRow - CENTER + i;
-    if (rowIdx < 0 || rowIdx >= pattern.length) {
-      el.th.textContent = "";
-      el.spans.forEach((channelSpans) =>
+function renderRows(rowElements, pattern, focusRow, cursor) {
+  rowElements.forEach((rowElement, i) => {
+    const currentRow = focusRow - CENTER + i;
+    if (currentRow < 0 || currentRow >= pattern.length) {
+      rowElement.th.textContent = "";
+      rowElement.spans.forEach((channelSpans) =>
         channelSpans.forEach((s) => (s.textContent = "")),
       );
       return;
     }
-    const row = pattern[rowIdx];
-    el.th.textContent = String(rowIdx).padStart(2, "0");
-    el.spans.forEach((channelSpans, ch) => {
-      const cell = row?.[ch] ?? EMPTY;
+    const patternRow = pattern[currentRow];
+    rowElement.th.textContent = String(currentRow).padStart(2, "0");
+    rowElement.spans.forEach((channelSpans, ch) => {
+      const cell = patternRow?.[ch] ?? EMPTY;
       channelSpans.forEach((s, position) => {
         const field = FIELDS[position];
         s.textContent = cell.slice(field.start, field.end);
+        const isCursor = ch === cursor.channel && position === cursor.position;
+        s.className = isCursor ? `${field.className} cursor` : field.className;
       });
     });
   });
