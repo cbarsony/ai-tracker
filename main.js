@@ -28,6 +28,9 @@ const trackerMachine = createMachine(appMachineConfig, {
       player.stop();
       playButton.textContent = "Play";
     },
+    [ACTIONS.RESET_FOCUS_ROW]() {
+      focusRow = 0;
+    },
   },
 });
 
@@ -50,26 +53,18 @@ function moveCursor(delta) {
   cursor.position = next % FIELDS_PER_CHANNEL;
 }
 
-document.getElementById("play").addEventListener("click", () => {
-  trackerMachine.send(EVENTS.TOGGLE_PLAY);
-});
+const keyHandlers = {
+  ArrowLeft: () => moveCursor(-1),
+  ArrowRight: () => moveCursor(1),
+  ArrowUp: () => focusRow > 0 && focusRow--,
+  ArrowDown: () => focusRow < song.pattern.length - 1 && focusRow++,
+  Home: () => focusRow > 0 && (focusRow = 0),
+  End: () =>
+    focusRow < song.pattern.length - 1 && (focusRow = song.pattern.length - 1),
+  Space: () => trackerMachine.send(EVENTS.TOGGLE_PLAY),
+};
 
 document.addEventListener("keydown", (event) => {
-  if (event.code === "ArrowLeft") {
-    moveCursor(-1);
-  } else if (event.code === "ArrowRight") {
-    moveCursor(1);
-  } else if (event.code === "ArrowUp" && focusRow > 0) {
-    focusRow--;
-  } else if (event.code === "ArrowDown" && focusRow < song.pattern.length - 1) {
-    focusRow++;
-  } else if (event.code === "Home" && focusRow > 0) {
-    focusRow = 0;
-  } else if (event.code === "End" && focusRow < song.pattern.length - 1) {
-    focusRow = song.pattern.length - 1;
-  } else if (event.code === "Space") {
-    trackerMachine.send(EVENTS.TOGGLE_PLAY);
-  }
-
+  keyHandlers[event.code]?.();
   render();
 });
