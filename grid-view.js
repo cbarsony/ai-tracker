@@ -1,9 +1,14 @@
+const cursorChannel = 0;
+const cursorPosition = 0;
 const EMPTY = "--------";
 
-export function buildGrid(gridEl, visibleRows, center, channels) {
-  return Array.from({ length: visibleRows }, (_, i) => {
+const VISIBLE_ROWS = 17;
+const CENTER = 8;
+
+export function buildGrid(gridEl, channels) {
+  return Array.from({ length: VISIBLE_ROWS }, (_, i) => {
     const tr = document.createElement("tr");
-    if (i === center) tr.classList.add("playhead");
+    if (i === CENTER) tr.classList.add("playhead");
     const th = document.createElement("th");
     tr.appendChild(th);
     const spans = Array.from({ length: channels }, () => {
@@ -21,9 +26,9 @@ export function buildGrid(gridEl, visibleRows, center, channels) {
   });
 }
 
-export function renderGrid(rowEls, pattern, focusRow, visibleRows, center) {
-  for (let i = 0; i < visibleRows; i++) {
-    const rowIdx = focusRow - center + i;
+export function renderGrid(rowEls, pattern, focusRow) {
+  for (let i = 0; i < VISIBLE_ROWS; i++) {
+    const rowIdx = focusRow - CENTER + i;
     const el = rowEls[i];
     if (rowIdx < 0 || rowIdx >= pattern.length) {
       el.th.textContent = "";

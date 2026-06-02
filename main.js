@@ -4,12 +4,9 @@ import { createMachine } from "./statechart.js";
 import { appMachineConfig, EVENTS, ACTIONS } from "./app-machine.js";
 import { buildGrid, renderGrid } from "./grid-view.js";
 
-const VISIBLE_ROWS = 17;
-const CENTER = 8;
-
 const playButton = document.getElementById("play");
 const grid = document.getElementById("grid");
-const rowEls = buildGrid(grid, VISIBLE_ROWS, CENTER, song.instruments.length);
+const rowEls = buildGrid(grid, song.instruments.length);
 
 const player = new Player(
   song,
@@ -31,7 +28,7 @@ const trackerMachine = createMachine(appMachineConfig, {
 });
 
 function render(focusRow) {
-  renderGrid(rowEls, song.pattern, focusRow, VISIBLE_ROWS, CENTER);
+  renderGrid(rowEls, song.pattern, focusRow);
 }
 
 render(0);
