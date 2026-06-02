@@ -28,9 +28,6 @@ const trackerMachine = createMachine(appMachineConfig, {
       player.stop();
       playButton.textContent = "Play";
     },
-    [ACTIONS.RESET_FOCUS_ROW]() {
-      focusRow = 0;
-    },
   },
 });
 
@@ -54,17 +51,41 @@ function moveCursor(delta) {
 }
 
 const keyHandlers = {
-  ArrowLeft: () => moveCursor(-1),
-  ArrowRight: () => moveCursor(1),
-  ArrowUp: () => focusRow > 0 && focusRow--,
-  ArrowDown: () => focusRow < song.pattern.length - 1 && focusRow++,
-  Home: () => focusRow > 0 && (focusRow = 0),
-  End: () =>
-    focusRow < song.pattern.length - 1 && (focusRow = song.pattern.length - 1),
+  ArrowLeft: () => {
+    moveCursor(-1);
+    render();
+  },
+  ArrowRight: () => {
+    moveCursor(1);
+    render();
+  },
+  ArrowUp: () => {
+    focusRow > 0 && focusRow--;
+    render();
+  },
+  ArrowDown: () => {
+    focusRow < song.pattern.length - 1 && focusRow++;
+    render();
+  },
+  Home: () => {
+    focusRow > 0 && (focusRow = 0);
+    render();
+  },
+  End: () => {
+    focusRow < song.pattern.length - 1 && (focusRow = song.pattern.length - 1);
+    render();
+  },
   Space: () => trackerMachine.send(EVENTS.TOGGLE_PLAY),
 };
 
 document.addEventListener("keydown", (event) => {
-  keyHandlers[event.code]?.();
-  render();
+  const handler = keyHandlers[event.code];
+  if (handler) {
+    event.preventDefault();
+    handler();
+  }
+});
+
+playButton.addEventListener("click", () => {
+  trackerMachine.send(EVENTS.TOGGLE_PLAY);
 });

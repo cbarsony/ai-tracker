@@ -11,7 +11,6 @@ export const EVENTS = {
 export const ACTIONS = {
   START_PLAYBACK: "START_PLAYBACK",
   STOP_PLAYBACK: "STOP_PLAYBACK",
-  RESET_FOCUS_ROW: "RESET_FOCUS_ROW",
 };
 
 export const appMachineConfig = {
@@ -27,10 +26,7 @@ export const appMachineConfig = {
       entry: ACTIONS.START_PLAYBACK,
       on: {
         [EVENTS.TOGGLE_PLAY]: STATES.EDITING,
-        [EVENTS.SONG_END]: {
-          target: STATES.EDITING,
-          actions: ACTIONS.RESET_FOCUS_ROW,
-        },
+        [EVENTS.SONG_END]: STATES.EDITING,
       },
     },
   },
