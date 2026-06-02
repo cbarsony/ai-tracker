@@ -22,10 +22,10 @@ const pattern = [
 ];
 
 const instruments = [
-  { name: "kick", sample: "samples/kick-new.wav" },
-  { name: "snare", sample: "samples/snare-new.wav" },
-  { name: "hihat-closed", sample: "samples/hihat-closed.wav" },
-  { name: "bass", sample: "samples/bass-new.wav" },
+  { name: "kick", sample: "samples/kick.wav" },
+  { name: "snare", sample: "samples/snare.wav" },
+  { name: "hihat-closed", sample: "samples/hihat.wav" },
+  { name: "bass", sample: "samples/bass.wav" },
 ];
 
-export const song = { pattern, instruments };
+export const song = { pattern, instruments, bpm: 140 };

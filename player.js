@@ -1,6 +1,5 @@
 import { buildSchedule } from "./scheduler.js";
 
-const DEFAULT_BPM = 140;
 const ROOT_NOTE = 60; // C-4 plays each sample at its natural speed
 
 export class Player {
@@ -23,7 +22,7 @@ export class Player {
 
     // Schedule the whole song upfront: the audio clock keeps the timing.
     const origin = this.audioContext.currentTime;
-    const events = buildSchedule(this.song, DEFAULT_BPM, fromRow);
+    const events = buildSchedule(this.song, this.song.bpm, fromRow);
 
     for (const event of events) {
       if (event.type === "tick") {
