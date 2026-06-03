@@ -5,14 +5,6 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <title>AI Tracker</title>
     <style>
-      /* Registered custom property so the conic-gradient angle can be animated.
-         (Frontier CSS: only animatable because it is typed as <angle>.) */
-      @property --ring-sweep {
-        syntax: "<angle>";
-        initial-value: 0deg;
-        inherits: false;
-      }
-
       #play {
         margin-bottom: 8px;
         font-size: 1.1rem;
@@ -29,88 +21,32 @@
         height: 1.5em;
       }
 
-      /* Any element that can hold the rainbow energy. */
       .energy {
-        position: relative;
         outline: none;
+        transition: box-shadow 0.25s ease;
       }
 
-      /* The rainbow ring. Masked so only the border band shows. */
-      .energy::after {
-        content: "";
-        position: absolute;
-        inset: -3px;
-        z-index: -1;
-        border-radius: 10px;
-        padding: 3px;
-        background: conic-gradient(
-          from var(--ring-sweep),
-          #ff0066,
-          #ffae00,
-          #00ffa3,
-          #00b3ff,
-          #d400ff,
-          #ff0066
-        );
-        -webkit-mask:
-          linear-gradient(#000 0 0) content-box,
-          linear-gradient(#000 0 0);
-        -webkit-mask-composite: xor;
-        mask:
-          linear-gradient(#000 0 0) content-box,
-          linear-gradient(#000 0 0);
-        mask-composite: exclude;
-        opacity: 0;
-        pointer-events: none;
+      .energy:focus {
+        box-shadow: 0 0 0 1px #888;
+        animation: focus-flash 0.4s ease-out;
       }
 
-      /* Energy arrives: the ring pulses to life and settles into a steady glow. */
-      .energy.receive::after {
-        animation: ring-receive 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-      }
-
-      /* Energy leaves: the ring is pulled away to nothing. */
-      .energy.release::after {
-        animation: ring-release 0.3s ease-in forwards;
-      }
-
-      @keyframes ring-receive {
-        0% {
-          --ring-sweep: 0deg;
-          opacity: 0;
-          transform: scale(1.18);
-          filter: blur(8px) brightness(2) saturate(1.6);
+      @keyframes focus-flash {
+        from {
+          outline: 3px solid #00b3ff;
+          outline-offset: 1px;
         }
-        45% {
-          opacity: 1;
-          transform: scale(0.97);
-          filter: blur(0) brightness(1.5) saturate(1.4);
-        }
-        100% {
-          --ring-sweep: 360deg;
-          opacity: 1;
-          transform: scale(1);
-          filter: blur(0) brightness(1) saturate(1);
+        to {
+          outline: 3px solid transparent;
+          outline-offset: 1px;
         }
       }
 
-      @keyframes ring-release {
-        0% {
-          opacity: 1;
-          transform: scale(1);
-          filter: blur(0) brightness(1.4) saturate(1.4);
-        }
-        100% {
-          opacity: 0;
-          transform: scale(0.82);
-          filter: blur(6px) brightness(2) saturate(1.6);
-        }
-      }
-
-      /* Good taste: respect users who ask for less motion. */
       @media (prefers-reduced-motion: reduce) {
-        .energy.receive::after,
-        .energy.release::after {
+        .energy {
+          transition: none;
+        }
+        .energy:focus {
           animation: none;
         }
       }

@@ -59,6 +59,11 @@ The exact mechanism (API, backend, agentic protocol) is intentionally left open 
 
 - Plain `.wav` files. Built-in samples exist today; user uploads are planned. A future minimal sample editor will add loop on/off, loop start/end, and ping-pong vs normal looping. Keep the sample model simple enough to describe to an AI.
 
+## UI / visual design
+
+- **Hybrid design philosophy:** the UI is minimal and clean at first look. Small, polished effects reveal themselves during use and suggest professionalism — visible only when they matter, never decorative noise.
+- **Focus transitions** convey "coming from / arriving somewhere": a brief colorful flash fires on focus gain, then settles to a thin quiet border. All effect logic lives in CSS only; JS does not touch classes or animations for this.
+
 ## Guardrails
 
 - Never add a dependency, framework, or build tool.
