@@ -96,6 +96,13 @@ grid.addEventListener("keydown", (event) => {
   }
 });
 
+grid.addEventListener("wheel", (event) => {
+  event.preventDefault();
+  const delta = event.deltaY > 0 ? 2 : -2;
+  focusRow = Math.max(0, Math.min(song.pattern.length - 1, focusRow + delta));
+  render();
+});
+
 playButton.addEventListener("click", () => {
   trackerMachine.send(EVENTS.TOGGLE_PLAY);
 });
