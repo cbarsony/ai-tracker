@@ -41,6 +41,8 @@ How it fits together:
 
 The "two clocks" lookahead scheduler (Chris Wilson's "A tale of two clocks") is deliberately **not** used here. It only becomes the right choice if a real requirement appears: editing while playing, live tempo changes that must take effect immediately, looping / cue points / dynamic pattern switching during playback, or peak audio performance becoming a goal (upfront scheduling holds all `AudioBufferSourceNode`s in memory simultaneously, whereas a lookahead window keeps only a small number alive at any time).
 
+**Cold-start sync fix — `waitForAudioClock`.** On a slow or busy machine a freshly created `AudioContext` can keep `currentTime` frozen at 0 for several seconds while the audio rendering thread warms up. If `origin` is captured during that freeze, `setTimeout`-based tick/row callbacks (which run on the wall clock) race ahead and the playhead leads the sound by the warm-up delay. The fix: `player.js` calls `waitForAudioClock(audioContext)` before capturing `origin`. The helper polls `currentTime` via `requestAnimationFrame` until it advances, then resolves — so `origin` is always a real, ticking value, and both clocks are anchored to the same instant. This is a one-shot startup wait, not a polling loop, and does not change the upfront-scheduling model.
+
 ## Song / data format conventions
 
 - The song is a **table-like array of string rows** that mirrors the grid UI — human- and AI-readable on sight. Prefer this readable shape over a compact/normalized format even at the cost of redundancy.

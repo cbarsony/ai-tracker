@@ -2,6 +2,22 @@ import { buildSchedule } from "./scheduler.js";
 
 const ROOT_NOTE = 60; // C-4 plays each sample at its natural speed
 
+function waitForAudioClock(audioContext) {
+  return new Promise((resolve) => {
+    const initial = audioContext.currentTime;
+    const wallStart = performance.now();
+    function check() {
+      if (audioContext.currentTime > initial) {
+        console.log(`audio clock started in ${(performance.now() - wallStart).toFixed(1)} ms`);
+        resolve();
+      } else {
+        requestAnimationFrame(check);
+      }
+    }
+    requestAnimationFrame(check);
+  });
+}
+
 export class Player {
   constructor(song, onNextRow, onSongEnd) {
     this.song = song;
@@ -18,9 +34,10 @@ export class Player {
     if (!this.buffers) this.buffers = await this.loadSamples();
     await this.audioContext.resume();
 
-    this.stop(); // clear any previous run
+    await waitForAudioClock(this.audioContext);
 
-    // Schedule the whole song upfront: the audio clock keeps the timing.
+    this.stop();
+
     const origin = this.audioContext.currentTime;
     const events = buildSchedule(this.song, this.song.bpm, fromRow);
 
