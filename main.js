@@ -3,11 +3,14 @@ import { Player } from "./player.js";
 import { createMachine } from "./statechart.js";
 import { appMachineConfig, EVENTS, ACTIONS } from "./app-machine.js";
 import { createGridView, FIELDS } from "./grid-view.js";
+import { createHistory } from "./history.js";
 
 const playButton = document.getElementById("play");
 const grid = document.getElementById("grid");
 const cursor = { channel: 0, position: 0 };
 const renderGrid = createGridView(grid, song.instruments.length, cursor);
+
+const history = createHistory(song);
 
 const player = new Player(
   song,
@@ -27,6 +30,14 @@ const trackerMachine = createMachine(appMachineConfig, {
     [ACTIONS.STOP_PLAYBACK]() {
       player.stop();
       playButton.textContent = "Play";
+    },
+    [ACTIONS.UNDO]() {
+      history.undo();
+      render();
+    },
+    [ACTIONS.REDO]() {
+      history.redo();
+      render();
     },
   },
 });
@@ -79,6 +90,17 @@ const keyHandlers = {
 };
 
 document.addEventListener("keydown", (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.code === "KeyZ") {
+    event.preventDefault();
+    trackerMachine.send(event.shiftKey ? EVENTS.REDO : EVENTS.UNDO);
+    return;
+  }
+  if ((event.ctrlKey || event.metaKey) && event.code === "KeyY") {
+    event.preventDefault();
+    trackerMachine.send(EVENTS.REDO);
+    return;
+  }
+
   const handler = keyHandlers[event.code];
   if (handler) {
     event.preventDefault();
