@@ -12,6 +12,25 @@
         border-radius: 7px;
       }
 
+      #controls {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 8px;
+        font-family: sans-serif;
+        font-size: 0.95rem;
+      }
+
+      #controls label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      #row-jump {
+        width: 3.5em;
+      }
+
       #grid {
         font-family: monospace;
         background: #eee;
@@ -70,6 +89,24 @@
   </head>
   <body>
     <button id="play" class="energy">Play</button>
+    <div id="controls">
+      <button id="mode" class="energy">Mode: Preview</button>
+      <label>
+        Instrument
+        <select id="instrument" class="energy"></select>
+      </label>
+      <label>
+        Row jump
+        <input
+          id="row-jump"
+          class="energy"
+          type="number"
+          min="0"
+          max="8"
+          value="1"
+        />
+      </label>
+    </div>
     <table id="grid" class="energy" tabindex="0"></table>
     <script type="module" src="main.js"></script>
   </body>

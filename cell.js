@@ -43,3 +43,17 @@ export function parseCell(text) {
 
   return result;
 }
+
+// midi number -> 3-char note name, e.g. 60 -> "C-4", 61 -> "C#4".
+export function formatNote(midi) {
+  const name = NOTE_NAMES[midi % 12];
+  const octave = Math.floor(midi / 12) - 1;
+  return name + octave;
+}
+
+// Writes a note + instrument into a cell, preserving its effect (EEE).
+export function writeNote(cell, midi, instrument) {
+  const note = formatNote(midi);
+  const inst = instrument.toString(16).toUpperCase().padStart(2, "0");
+  return note + inst + cell.slice(5);
+}

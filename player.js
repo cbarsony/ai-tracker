@@ -84,6 +84,20 @@ export class Player {
     this.sources = [];
   }
 
+  // Auditions a single note immediately (used by the grid editor).
+  // One-shot and independent of the upfront song schedule.
+  async playNote(midi, instrument) {
+    if (!this.audioContext) this.audioContext = new AudioContext();
+    if (!this.buffers) this.buffers = await this.loadSamples();
+    await this.audioContext.resume();
+
+    const source = this.audioContext.createBufferSource();
+    source.buffer = this.buffers[instrument];
+    source.playbackRate.value = 2 ** ((midi - ROOT_NOTE) / 12);
+    source.connect(this.audioContext.destination);
+    source.start();
+  }
+
   async loadSamples() {
     return Promise.all(
       this.song.instruments.map(async (instrument) => {
