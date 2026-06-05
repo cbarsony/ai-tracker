@@ -66,10 +66,36 @@
         background: #eee;
         color: #000;
       }
+
+      .write-cursor {
+        background: #d23c3c;
+        color: #fff;
+      }
+
+      #toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      #toolbar label {
+        font-family: sans-serif;
+        font-size: 0.9rem;
+      }
+
+      #toolbar input[type="number"] {
+        width: 3.5em;
+      }
     </style>
   </head>
   <body>
-    <button id="play" class="energy">Play</button>
+    <div id="toolbar">
+      <button id="play" class="energy">Play</button>
+      <label>Instrument <select id="instrument" class="energy"></select></label>
+      <label>Octave <input id="octave" class="energy" type="number" min="0" max="7" value="4" /></label>
+      <label>Step <input id="step" class="energy" type="number" min="0" max="8" value="1" /></label>
+    </div>
     <table id="grid" class="energy" tabindex="0"></table>
     <script type="module" src="main.js"></script>
   </body>

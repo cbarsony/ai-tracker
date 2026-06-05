@@ -13,11 +13,12 @@ export const FIELDS = [
   { className: "effect_value_character_2", start: 7, end: 8 },
 ];
 
-// Builds the grid DOM and returns a render(pattern, focusRow) function.
+// Builds the grid DOM and returns a render(pattern, focusRow, writeMode) function.
 // The row elements stay private to this module.
 export function createGridView(gridEl, channelsCount, cursor) {
   const rowEls = buildRows(gridEl, channelsCount);
-  return (pattern, focusRow) => renderRows(rowEls, pattern, focusRow, cursor);
+  return (pattern, focusRow, writeMode) =>
+    renderRows(rowEls, pattern, focusRow, cursor, writeMode);
 }
 
 function buildRows(gridEl, channelsCount) {
@@ -42,7 +43,7 @@ function buildRows(gridEl, channelsCount) {
   });
 }
 
-function renderRows(rowElements, pattern, focusRow, cursor) {
+function renderRows(rowElements, pattern, focusRow, cursor, writeMode) {
   rowElements.forEach((rowElement, i) => {
     const currentRow = focusRow - CENTER + i;
     if (currentRow < 0 || currentRow >= pattern.length) {
@@ -60,7 +61,12 @@ function renderRows(rowElements, pattern, focusRow, cursor) {
         const field = FIELDS[position];
         s.textContent = cell.slice(field.start, field.end);
         const isCursor = ch === cursor.channel && position === cursor.position;
-        s.className = isCursor ? `${field.className} cursor` : field.className;
+        // In WRITE mode the cursor cell on the playhead row (where the next
+        // note lands) gets an extra highlight.
+        const isWriteTarget = isCursor && writeMode && currentRow === focusRow;
+        s.className = isCursor
+          ? `${field.className} cursor${isWriteTarget ? " write-cursor" : ""}`
+          : field.className;
       });
     });
   });

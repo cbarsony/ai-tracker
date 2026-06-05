@@ -43,3 +43,20 @@ export function parseCell(text) {
 
   return result;
 }
+
+// MIDI number -> 3-char note, e.g. 60 -> "C-4". Inverse of parseCell's note.
+export function formatNote(midi) {
+  const octave = Math.floor(midi / 12) - 1;
+  return NOTE_NAMES[midi % 12] + octave;
+}
+
+// Return a copy of `cell` with its note + instrument set, effect preserved.
+export function writeNote(cell, midi, instrument) {
+  const inst = instrument.toString(16).toUpperCase().padStart(2, "0");
+  return formatNote(midi) + inst + cell.slice(5, 8);
+}
+
+// Return a copy of `cell` with its note + instrument cleared, effect preserved.
+export function clearNote(cell) {
+  return "-----" + cell.slice(5, 8);
+}

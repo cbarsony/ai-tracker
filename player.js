@@ -29,15 +29,44 @@ export class Player {
     this.onSongEnd = onSongEnd;
   }
 
-  async play(fromRow = 0) {
+  // Make sure the audio context exists, samples are decoded, and the context
+  // is running. Shared by full playback and single-note preview.
+  async ensureAudio() {
     if (!this.audioContext) this.audioContext = new AudioContext();
     if (!this.buffers) this.buffers = await this.loadSamples();
     await this.audioContext.resume();
+  }
+
+  // Start a single note immediately and return a handle to stop it later.
+  // Used for polyphonic preview, where each held key keeps one note sounding.
+  async startNote(midi, instrument) {
+    await this.ensureAudio();
+    const source = this.audioContext.createBufferSource();
+    source.buffer = this.buffers[instrument];
+    source.playbackRate.value = 2 ** ((midi - ROOT_NOTE) / 12);
+    const gain = this.audioContext.createGain();
+    source.connect(gain);
+    gain.connect(this.audioContext.destination);
+    source.start();
+    return { source, gain };
+  }
+
+  // Stop a preview note, with a short fade-out to avoid a click on key release.
+  stopNote(handle) {
+    if (!handle) return;
+    const { source, gain } = handle;
+    const end = this.audioContext.currentTime + 0.02;
+    gain.gain.setValueAtTime(gain.gain.value, this.audioContext.currentTime);
+    gain.gain.linearRampToValueAtTime(0, end);
+    source.stop(end);
+  }
+
+  async play(fromRow = 0) {
+    await this.ensureAudio();
 
     await waitForAudioClock(this.audioContext);
 
     this.stop();
-
     const origin = this.audioContext.currentTime;
     const events = buildSchedule(this.song, this.song.bpm, fromRow);
 
