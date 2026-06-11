@@ -1,6 +1,6 @@
 const EMPTY = "--------";
-const VISIBLE_ROWS = 17;
-const CENTER = 8;
+export const VISIBLE_ROWS = 17;
+export const CENTER = 8;
 
 // The six fields of a cell, in cursor order.
 // Index = cursor position. start/end slice the 8-char cell string.
@@ -15,8 +15,8 @@ export const FIELDS = [
 
 // Builds the grid DOM and returns a render(pattern, focusRow) function.
 // The row elements stay private to this module.
-export function createGridView(gridEl, channelsCount, cursor) {
-  const rowEls = buildRows(gridEl, channelsCount);
+export function createGridView(gridTableElement, channelsCount, cursor) {
+  const rowEls = buildRows(gridTableElement, channelsCount);
   return (pattern, focusRow) => renderRows(rowEls, pattern, focusRow, cursor);
 }
 
@@ -55,10 +55,11 @@ function renderRows(rowElements, pattern, focusRow, cursor) {
     const patternRow = pattern[currentRow];
     rowElement.th.textContent = String(currentRow).padStart(2, "0");
     rowElement.spans.forEach((channelSpans, ch) => {
-      const cell = patternRow?.[ch] ?? EMPTY;
+      const note = patternRow?.[ch];
       channelSpans.forEach((s, position) => {
         const field = FIELDS[position];
-        s.textContent = cell.slice(field.start, field.end);
+        s.textContent = note ? note.pitch : "--------";
+        /* s.textContent = note.slice(field.start, field.end); */
         const isCursor = ch === cursor.channel && position === cursor.position;
         s.className = isCursor ? `${field.className} cursor` : field.className;
       });

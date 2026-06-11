@@ -1,4 +1,5 @@
-import { parseCell } from "./cell.js";
+/* import { parseCell } from "./cell.js"; */
+import { EFFECT_KEY } from "./song.js";
 
 export const ROWS_PER_BEAT = 4;
 
@@ -12,18 +13,21 @@ export function buildSchedule(song, startBpm, startRow = 0) {
   let time = 0;
 
   song.pattern.forEach((row, rowIndex) => {
-    const cells = row.map(parseCell);
+    /* const cells = row.map(parseCell); */
 
     // A tempo effect applies on its own row (it sets the row's duration too).
-    for (const cell of cells) {
-      if (cell.tempo) bpm = cell.tempo;
+    for (const cell of row) {
+      /* if (cell.tempo) bpm = cell.tempo; */
+      if (cell?.effect?.key === EFFECT_KEY.TEMPO) {
+        bpm = parseInt(cell.effect.value, 16);
+      }
     }
 
     if (rowIndex >= startRow) {
-      for (const cell of cells) {
-        if (cell.note) {
+      for (const cell of row) {
+        if (cell?.note) {
           const event = { time, ...cell.note };
-          if (cell.volume !== undefined) event.volume = cell.volume;
+          if (cell?.volume !== undefined) event.volume = cell.volume;
           events.push(event);
         }
       }

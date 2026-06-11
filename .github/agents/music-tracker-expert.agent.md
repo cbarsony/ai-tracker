@@ -25,6 +25,20 @@ AI Tracker is an experimental tool for **human-AI musical collaboration**, not a
 - Separate concerns into small modules: pure cell/format parsing (`cell.js`), pure scheduler (`scheduler.js`), Player / Web Audio (`player.js`), DOM views (`grid-view.js`), and the wiring layer (`main.js`). The design intent is that editing logic stays mode-agnostic and the statechart decides when input is allowed — input gating is a goal, not yet fully wired (today `main.js` handles keys directly in every state).
 - **Editor grid uses plain DOM elements, not `<canvas>`.** "Row jumping" with no fancy animation is perfectly fine.
 
+## Grid DOM strategy
+
+The tracker grid uses a **pre-allocation, content-only-update** strategy:
+
+- All cell DOM elements are created **once** at startup and never added, removed, or replaced during normal use.
+- Updates change only `textContent` of existing cells — never the structure.
+- This is intentional: the grid has a fixed number of rows and columns (columns only change when the user adds/removes an instrument, which is a rare, deliberate action). Because structure is stable, frequent cell updates are cheap — no layout recalculation beyond possible text-reflow, which CSS sizing constraints minimize.
+- When an instrument is added or removed, a full column add/remove is acceptable because it is a rare, user-initiated operation and its cost is irrelevant to runtime performance.
+
+This approach is chosen over dynamic DOM creation/deletion because:
+1. **Repeated `createElement` + `appendChild` / `removeChild` cycles are costlier** than text mutations for a high-frequency update pattern like tracker playback or live editing.
+2. **Pre-allocated cells keep memory layout stable**, reducing GC pressure.
+3. The grid's fixed structure makes pre-allocation natural and maintainable.
+
 ## Playback: upfront Web Audio scheduling
 
 All audio events for the whole song are scheduled at once when playback starts. There is no polling loop, no `setInterval`, and no lookahead window — the Web Audio clock keeps the timing.

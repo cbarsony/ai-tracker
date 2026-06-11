@@ -1,3 +1,5 @@
+import { EFFECT_KEY } from "./song.js";
+
 // Cell format: 8 chars - "NNNIIEEE"
 //   NNN: note        - "C-4", "C#5", "---" (empty), "===" (note off)
 //   II:  instrument   - hex index, "00".."FF"
@@ -22,24 +24,43 @@ const NOTE_NAMES = [
   "B-",
 ];
 
-export function parseCell(text) {
+export function parseCell(note) {
   const result = {};
 
-  const noteText = text.slice(0, 3);
-  if (noteText !== "---" && noteText !== "===") {
-    const semitone = NOTE_NAMES.indexOf(noteText.slice(0, 2));
-    const octave = parseInt(noteText[2], 10);
-    const instrument = parseInt(text.slice(3, 5), 16);
-    result.note = { midi: (octave + 1) * 12 + semitone, instrument };
+  /* const noteText = text.slice(0, 3); */
+  /* if (noteText !== "---" && noteText !== "===") { */
+  if (note) {
+    /* const semitone = NOTE_NAMES.indexOf(noteText.slice(0, 2)); */
+    const semitone = NOTE_NAMES.indexOf(note.pitch.slice(0, 2));
+    const octave = parseInt(note.pitch[2], 10);
+    /* const instrument = parseInt(note.slice(3, 5), 16); */
+    result.note = {
+      midi: (octave + 1) * 12 + semitone,
+      intstrument: note.instrument,
+    };
   }
 
-  const effect = text.slice(5, 8);
-  if (effect[0] === "T") {
-    result.tempo = parseInt(effect.slice(1), 16);
+  /* const effect = note.slice(5, 8); */
+
+  if (note?.effect) {
+    if (note.effect.key === EFFECT_KEY.TEMPO) {
+      result.tempo = parseInt(note.effect.value, 16);
+    }
+    if (note.effect.key === EFFECT_KEY.VOLUME) {
+      result.volume = parseInt(note.effect.value, 10); // decimal 00-99
+    }
   }
-  if (effect[0] === "V") {
-    result.volume = parseInt(effect.slice(1), 10); // decimal 00-99
-  }
+
+  /* const effect = note.effect;
+
+  if (effect) {
+    if (effect[0] === "T") {
+      result.tempo = parseInt(effect.slice(1), 16);
+    }
+    if (effect[0] === "V") {
+      result.volume = parseInt(effect.slice(1), 10); // decimal 00-99
+    }
+  } */
 
   return result;
 }
