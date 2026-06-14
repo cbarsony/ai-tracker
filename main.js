@@ -2,12 +2,24 @@ import { song } from "./song.js";
 import { Player } from "./player.js";
 import { createMachine } from "./statechart.js";
 import { appMachineConfig, EVENTS, ACTIONS } from "./app-machine.js";
-import { createGridView, FIELDS, CENTER, VISIBLE_ROWS } from "./grid-view.js";
+
+const VISIBLE_ROWS = 17;
+const CENTER = 8;
+
+// The six fields of a cell, in cursor order.
+// Index = cursor position. start/end slice the 8-char cell string.
+const FIELDS = [
+  { className: "note", start: 0, end: 3 },
+  { className: "instrument_character_1", start: 3, end: 4 },
+  { className: "instrument_character_2", start: 4, end: 5 },
+  { className: "effect_key", start: 5, end: 6 },
+  { className: "effect_value_character_1", start: 6, end: 7 },
+  { className: "effect_value_character_2", start: 7, end: 8 },
+];
 
 const playButton = document.getElementById("play");
 const gridTableElement = document.getElementById("grid");
 const cursor = { channel: 0, position: 0 };
-/* const renderGrid = createGridView(gridTableElement, song.instruments.length, cursor); */
 
 let focusRow = 0;
 
@@ -124,12 +136,6 @@ const trackerMachine = createMachine(appMachineConfig, {
     },
   },
 });
-
-/* function render() {
-  renderGrid(song.pattern, focusRow);
-}
-
-render(); */
 
 const CHANNEL_COUNT = song.instruments.length;
 const FIELDS_PER_CHANNEL = FIELDS.length;

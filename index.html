@@ -26,36 +26,6 @@
         height: 1.5em;
       }
 
-      .energy {
-        outline: none;
-        transition: box-shadow 0.25s ease;
-      }
-
-      .energy:focus {
-        box-shadow: 0 0 0 1px #888;
-        animation: focus-flash 0.4s ease-out;
-      }
-
-      @keyframes focus-flash {
-        from {
-          outline: 3px solid #00b3ff;
-          outline-offset: 1px;
-        }
-        to {
-          outline: 3px solid transparent;
-          outline-offset: 1px;
-        }
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .energy {
-          transition: none;
-        }
-        .energy:focus {
-          animation: none;
-        }
-      }
-
       .instrument_character_1,
       .effect_key {
         margin-left: 4px;
