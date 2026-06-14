@@ -1,7 +1,11 @@
-/* import { parseCell } from "./cell.js"; */
 import { EFFECT_KEY } from "./song.js";
 
 export const ROWS_PER_BEAT = 4;
+
+const NOTE_NAMES = [
+  "C-", "C#", "D-", "D#", "E-", "F-",
+  "F#", "G-", "G#", "A-", "A#", "B-",
+];
 
 // Pure function: song in, plain event objects out.
 // Walks every row once so BPM changes before `startRow` still count,
@@ -13,11 +17,8 @@ export function buildSchedule(song, startBpm, startRow = 0) {
   let time = 0;
 
   song.pattern.forEach((row, rowIndex) => {
-    /* const cells = row.map(parseCell); */
-
     // A tempo effect applies on its own row (it sets the row's duration too).
     for (const cell of row) {
-      /* if (cell.tempo) bpm = cell.tempo; */
       if (cell?.effect?.key === EFFECT_KEY.TEMPO) {
         bpm = parseInt(cell.effect.value, 16);
       }
@@ -25,9 +26,15 @@ export function buildSchedule(song, startBpm, startRow = 0) {
 
     if (rowIndex >= startRow) {
       for (const cell of row) {
-        if (cell?.note) {
-          const event = { time, ...cell.note };
-          if (cell?.volume !== undefined) event.volume = cell.volume;
+        if (cell?.pitch) {
+          const event = {
+            time,
+            midi: pitchToMidi(cell.pitch),
+            instrument: cell.instrumentId,
+          };
+          if (cell.effect?.key === EFFECT_KEY.VOLUME) {
+            event.volume = parseInt(cell.effect.value, 10);
+          }
           events.push(event);
         }
       }
@@ -41,4 +48,10 @@ export function buildSchedule(song, startBpm, startRow = 0) {
   events.push({ time, type: "end" });
 
   return events;
+}
+
+function pitchToMidi(pitch) {
+  const semitone = NOTE_NAMES.indexOf(pitch.slice(0, 2));
+  const octave = parseInt(pitch[2], 10);
+  return (octave + 1) * 12 + semitone;
 }

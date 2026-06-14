@@ -18,12 +18,24 @@ AI Tracker is an experimental tool for **human-AI musical collaboration**, not a
 - Keep the statechart **config pure** (just description, e.g. `app-machine.js`); put side-effecting action implementations in the wiring/glue layer (`main.js`).
 - **Editor grid uses plain DOM elements, not `<canvas>`.** "Row jumping" with no fancy animation is perfectly fine.
 
+## Song format (object-based)
+
+The song is a **structured object graph**, not strings. The "table" is only the visual metaphor of the grid — storage is plain objects that are easy to render as a table and to describe to an AI.
+
+- `song = { pattern, instruments, bpm }` (in `song.js`); `bpm` defaults to 140.
+- `pattern` is a 2D array indexed `pattern[rowIndex][channelIndex]`. Each cell is either `null` (empty) or a `Note`.
+- `Note { pitch, instrumentId, effect }` — `pitch` is a note string like `"C-4"`, `instrumentId` indexes `instruments`, and `effect` is `null` or an `Effect`.
+- `Effect { key, value }` — `key` is one of `EFFECT_KEY` (`TEMPO` = `"T"`, `VOLUME` = `"V"`); `value` is the parameter (tempo parsed as hex, volume as decimal `00`–`99`).
+- `instruments` is `[{ name, sample }]`, e.g. `{ name: "kick", sample: "samples/kick.wav" }`.
+
+The old fixed-width string format (e.g. `"C-400---"`) is kept only as a reference fixture (`xpattern` in `song.js`) — it is **not** the live format. Note→MIDI conversion for playback lives in `scheduler.js` (`buildSchedule`), which reads `Note` objects directly and emits plain `{ time, midi, instrument, volume? }` events.
+
 ## Grid DOM strategy
 
 The tracker grid uses a **pre-allocation, content-only-update** strategy:
 
 - All cell DOM elements are created **once** at startup and never added, removed, or replaced during normal use.
-- Updates change only `textContent` of existing cells — never the structure.
+- Updates change only the `textContent` of existing cells (plus toggling a row-level `empty` class) — never the DOM structure.
 - This is intentional: the grid has a fixed number of rows and columns (columns only change when the user adds/removes an instrument, which is a rare, deliberate action). Because structure is stable, frequent cell updates are cheap — no layout recalculation beyond possible text-reflow, which CSS sizing constraints minimize.
 - When an instrument is added or removed, a full column add/remove is acceptable because it is a rare, user-initiated operation and its cost is irrelevant to runtime performance.
 
@@ -58,7 +70,7 @@ The exact mechanism (API, backend, agentic protocol) is intentionally left open 
 ## UI / visual design
 
 - **Hybrid design philosophy:** the UI is minimal and clean at first look. Small, polished effects reveal themselves during use and suggest professionalism — visible only when they matter, never decorative noise.
-- **Focus transitions** convey "coming from / arriving somewhere": a brief colorful flash fires on focus gain, then settles to a thin quiet border. All effect logic lives in CSS only; JS does not touch classes or animations for this.
+- **Focus transitions (planned)** should convey "coming from / arriving somewhere": a brief colorful flash on focus gain that settles to a thin quiet border. This is not implemented yet — the `energy` class on the play button and grid (`index.html`) is a reserved hook with no CSS rules behind it so far. When built, all effect logic must live in CSS only; JS must not touch classes or animations for this.
 
 ## Guardrails
 
