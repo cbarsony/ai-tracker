@@ -6,7 +6,7 @@ class Note {
   }
 }
 
-export class EndNote {}
+export class EndNote { }
 
 export const EFFECT_KEY = {
   TEMPO: "T",
@@ -26,21 +26,21 @@ class Effect {
 }
 
 const pattern = [
-  [new Note("C-4", 0, new Effect(EFFECT_KEY.VOLUME, "32")), null, null, null],
+  [new Note("C-4", 0, null), null, null, null],
   [null, null, null, null],
-  [new Note("C-4", 2, null), new Note("E-3", 1), null, null],
+  [new Note("C-4", 2, null), new Note("E-3", 3), null, null],
   [null, null, null, null],
-  [new Note("C-4", 0, new Effect(EFFECT_KEY.TEMPO, 80)), null, null, null],
+  [new Note("C-4", 1, null), null, null, null],
   [null, null, null, null],
-  [new Note("C-4", 2, null), new Note("E-3", 1), null, null],
+  [new Note("C-4", 2, null), new Note("E-3", 3), null, null],
   [null, null, null, null],
   [new Note("C-4", 0, null), null, null, null],
   [null, null, null, null],
-  [new Note("C-4", 2, null), new Note("E-3", 1), null, null],
+  [new Note("C-4", 2, null), new Note("E-3", 3), null, null],
   [null, null, null, null],
-  [new Note("C-4", 0, null), null, null, null],
+  [new Note("C-4", 1, null), null, null, null],
   [null, null, null, null],
-  [new Note("C-4", 2, null), new Note("E-3", 1), null, null],
+  [new Note("C-4", 2, null), new Note("E-3", 3), null, null],
   [null, null, null, null],
 ];
 
