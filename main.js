@@ -20,6 +20,7 @@ const FIELDS = [
 const playButton = document.getElementById("play");
 const gridTableElement = document.getElementById("grid");
 const cursor = { channel: 0, position: 0 };
+let cursorEl = null;
 
 let focusRow = 0;
 
@@ -30,14 +31,10 @@ function render() {
     // Empty row?
     if (currentRow < 0 || currentRow >= song.pattern.length) {
       rowElement.classList.add("empty");
-      Array.from(rowElement.children).forEach((cell, cellIndex) => {
+      Array.from(rowElement.children).forEach((cell) => {
         if (cell.children.length) {
-          Array.from(cell.children).forEach((field, fieldIndex) => {
-            if (field.className === "note") {
-              field.textContent = "";
-            } else {
-              field.textContent = "";
-            }
+          Array.from(cell.children).forEach((field) => {
+            field.textContent = "";
           });
         } else {
           cell.textContent = "";
@@ -114,6 +111,7 @@ function buildGrid() {
 
 buildGrid();
 render();
+updateCursor();
 
 const player = new Player(
   song,
@@ -148,13 +146,22 @@ function moveCursor(delta) {
   cursor.position = next % FIELDS_PER_CHANNEL;
 }
 
+function updateCursor() {
+  cursorEl?.classList.remove("cursor");
+  const tds = gridTableElement.rows[CENTER].querySelectorAll("td");
+  cursorEl = tds[cursor.channel].querySelectorAll("span")[cursor.position];
+  cursorEl.classList.add("cursor");
+}
+
 const keyHandlers = {
   ArrowLeft: () => {
     moveCursor(-1);
+    updateCursor();
     render();
   },
   ArrowRight: () => {
     moveCursor(1);
+    updateCursor();
     render();
   },
   ArrowUp: () => {
@@ -188,6 +195,7 @@ gridTableElement.addEventListener("keydown", (event) => {
   if (event.code === "Tab") {
     event.preventDefault();
     moveCursor(event.shiftKey ? -FIELDS_PER_CHANNEL : FIELDS_PER_CHANNEL);
+    updateCursor();
     render();
   } else if (event.code === "Escape") {
     playButton.focus();
