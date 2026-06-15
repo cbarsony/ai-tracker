@@ -1,7 +1,8 @@
-import { song } from "./song.js";
+import { song, addNote } from "./song.js";
 import { Player } from "./player.js";
 import { createMachine } from "./statechart.js";
-import { appMachineConfig, EVENTS, ACTIONS } from "./app-machine.js";
+import { appMachineConfig, EVENTS, ACTIONS, STATES } from "./app-machine.js";
+import { NOTE_NAMES } from "./scheduler.js";
 
 const VISIBLE_ROWS = 17;
 const CENTER = 8;
@@ -18,11 +19,16 @@ const FIELDS = [
 ];
 
 const playButton = document.getElementById("play");
+const recordButton = document.getElementById("record");
+const instrumentSelect = document.getElementById("instrument");
+const octaveSelect = document.getElementById("octave");
 const gridTableElement = document.getElementById("grid");
 const cursor = { channel: 0, position: 0 };
 let cursorEl = null;
 
 let focusRow = 0;
+let selectedInstrument = 0;
+let octave = 4;
 
 function render() {
   Array.from(gridTableElement.children, (rowElement, rowElementIndex) => {
@@ -127,10 +133,20 @@ const trackerMachine = createMachine(appMachineConfig, {
     [ACTIONS.START_PLAYBACK]() {
       player.play(focusRow);
       playButton.textContent = "Stop";
+      recordButton.disabled = true;
     },
     [ACTIONS.STOP_PLAYBACK]() {
       player.stop();
       playButton.textContent = "Play";
+    },
+    [ACTIONS.ENTER_JAMMING]() {
+      recordButton.textContent = "Jam";
+      recordButton.classList.remove("recording");
+      recordButton.disabled = false;
+    },
+    [ACTIONS.ENTER_RECORDING]() {
+      recordButton.textContent = "\u25CF Rec";
+      recordButton.classList.add("recording");
     },
   },
 });
@@ -151,6 +167,30 @@ function updateCursor() {
   const tds = gridTableElement.rows[CENTER].querySelectorAll("td");
   cursorEl = tds[cursor.channel].querySelectorAll("span")[cursor.position];
   cursorEl.classList.add("cursor");
+}
+
+// Piano-style keyboard: lower row = current octave, upper row = octave + 1.
+// Each value is a semitone offset from C of the current octave.
+const NOTE_KEYS = {
+  KeyZ: 0, KeyS: 1, KeyX: 2, KeyD: 3, KeyC: 4, KeyV: 5,
+  KeyG: 6, KeyB: 7, KeyH: 8, KeyN: 9, KeyJ: 10, KeyM: 11,
+  KeyQ: 12, Digit2: 13, KeyW: 14, Digit3: 15, KeyE: 16, KeyR: 17,
+  Digit5: 18, KeyT: 19, Digit6: 20, KeyY: 21, Digit7: 22, KeyU: 23,
+};
+
+function buildPitch(semitoneOffset) {
+  const total = octave * 12 + semitoneOffset;
+  return `${NOTE_NAMES[total % 12]}${Math.floor(total / 12)}`;
+}
+
+function handleNoteKey(code) {
+  const pitch = buildPitch(NOTE_KEYS[code]);
+  player.previewNote(pitch, selectedInstrument);
+  if (trackerMachine.state === STATES.RECORDING) {
+    addNote(focusRow, cursor.channel, pitch, selectedInstrument);
+    if (focusRow < song.pattern.length - 1) focusRow++;
+    render();
+  }
 }
 
 const keyHandlers = {
@@ -181,13 +221,28 @@ const keyHandlers = {
     render();
   },
   Space: () => trackerMachine.send(EVENTS.TOGGLE_PLAY),
+  Enter: () => trackerMachine.send(EVENTS.TOGGLE_RECORD),
 };
 
 document.addEventListener("keydown", (event) => {
+  // Let dropdowns keep their own keyboard behavior.
+  if (event.target.tagName === "SELECT") return;
+
   const handler = keyHandlers[event.code];
   if (handler) {
     event.preventDefault();
     handler();
+    return;
+  }
+
+  if (
+    !event.repeat &&
+    event.code in NOTE_KEYS &&
+    (trackerMachine.state === STATES.JAMMING ||
+      trackerMachine.state === STATES.RECORDING)
+  ) {
+    event.preventDefault();
+    handleNoteKey(event.code);
   }
 });
 
@@ -211,4 +266,32 @@ gridTableElement.addEventListener("wheel", (event) => {
 
 playButton.addEventListener("click", () => {
   trackerMachine.send(EVENTS.TOGGLE_PLAY);
+});
+
+recordButton.addEventListener("click", () => {
+  trackerMachine.send(EVENTS.TOGGLE_RECORD);
+  gridTableElement.focus();
+});
+
+song.instruments.forEach((instrument, index) => {
+  const option = document.createElement("option");
+  option.value = String(index);
+  option.textContent = instrument.name;
+  instrumentSelect.appendChild(option);
+});
+instrumentSelect.addEventListener("change", () => {
+  selectedInstrument = Number(instrumentSelect.value);
+  gridTableElement.focus();
+});
+
+for (let o = 1; o <= 8; o++) {
+  const option = document.createElement("option");
+  option.value = String(o);
+  option.textContent = String(o);
+  octaveSelect.appendChild(option);
+}
+octaveSelect.value = String(octave);
+octaveSelect.addEventListener("change", () => {
+  octave = Number(octaveSelect.value);
+  gridTableElement.focus();
 });

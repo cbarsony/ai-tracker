@@ -2,7 +2,7 @@ import { EFFECT_KEY } from "./song.js";
 
 export const ROWS_PER_BEAT = 4;
 
-const NOTE_NAMES = [
+export const NOTE_NAMES = [
   "C-", "C#", "D-", "D#", "E-", "F-",
   "F#", "G-", "G#", "A-", "A#", "B-",
 ];
@@ -50,7 +50,7 @@ export function buildSchedule(song, startBpm, startRow = 0) {
   return events;
 }
 
-function pitchToMidi(pitch) {
+export function pitchToMidi(pitch) {
   const semitone = NOTE_NAMES.indexOf(pitch.slice(0, 2));
   const octave = parseInt(pitch[2], 10);
   return (octave + 1) * 12 + semitone;

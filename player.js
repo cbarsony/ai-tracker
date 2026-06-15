@@ -1,4 +1,4 @@
-import { buildSchedule } from "./scheduler.js";
+import { buildSchedule, pitchToMidi } from "./scheduler.js";
 
 const ROOT_NOTE = 60; // C-4 plays each sample at its natural speed
 
@@ -82,6 +82,21 @@ export class Player {
       source.stop();
     }
     this.sources = [];
+  }
+
+  // Fire-and-forget audition of a single note. Bypasses the scheduler and is
+  // not tracked in `this.sources`, so it rings out naturally and is never cut
+  // by `stop()`. Lazily boots the audio context so it works before first play.
+  async previewNote(pitch, instrumentId) {
+    if (!this.audioContext) this.audioContext = new AudioContext();
+    if (!this.buffers) this.buffers = await this.loadSamples();
+    await this.audioContext.resume();
+
+    const source = this.audioContext.createBufferSource();
+    source.buffer = this.buffers[instrumentId];
+    source.playbackRate.value = 2 ** ((pitchToMidi(pitch) - ROOT_NOTE) / 12);
+    source.connect(this.audioContext.destination);
+    source.start();
   }
 
   async loadSamples() {

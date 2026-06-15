@@ -55,7 +55,8 @@ export const song = {
   pattern,
   instruments,
   bpm: 140,
-  addNote: (channelId, rowId, pitch) => {
-    this.pattern[rowId][channelId] = new Note(pitch, instrumentId, effect);
-  },
 };
+
+export function addNote(rowId, channelId, pitch, instrumentId) {
+  song.pattern[rowId][channelId] = new Note(pitch, instrumentId, null);
+}

@@ -5,11 +5,22 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <title>AI Tracker</title>
     <style>
-      #play {
-        margin-bottom: 8px;
+      #play,
+      #record {
         font-size: 1.1rem;
         padding: 8px 22px;
         border-radius: 7px;
+      }
+
+      #toolbar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      #record.recording {
+        color: #c00;
       }
 
       #grid {
@@ -43,7 +54,12 @@
     </style>
   </head>
   <body>
-    <button id="play" class="energy">Play</button>
+    <div id="toolbar">
+      <button id="play" class="energy">Play</button>
+      <button id="record">Jam</button>
+      <label>Instrument <select id="instrument"></select></label>
+      <label>Octave <select id="octave"></select></label>
+    </div>
     <table id="grid" class="energy" tabindex="0"></table>
     <script type="module" src="main.js"></script>
   </body>
