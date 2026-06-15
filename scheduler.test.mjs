@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { buildSchedule } from "./scheduler.js";
+import { EndNote } from "./song.js";
 
 const ROW_AT_140 = 60 / (140 * 4); // 0.10714...
 const ROW_AT_70 = 60 / (70 * 4); //  0.21428...
@@ -73,4 +74,35 @@ test("a tempo change applies on its own row", () => {
     { time: ROW_AT_140, midi: 60, instrument: 1 },
     { time: ROW_AT_140 + ROW_AT_70, midi: 60, instrument: 2 },
   ]);
+});
+
+test("a note-off stamps stopTime onto the open note on its channel", () => {
+  const song = {
+    pattern: [
+      [{ pitch: "C-4", instrumentId: 0, effect: null }, null],
+      [null, null],
+      [new EndNote(), null],
+    ],
+  };
+
+  const events = buildSchedule(song, 140, 0);
+  const note = events.find((e) => e.midi !== undefined);
+
+  assert.equal(note.stopTime, 2 * ROW_AT_140);
+});
+
+test("a note-off only cuts its own channel", () => {
+  const song = {
+    pattern: [
+      [{ pitch: "C-4", instrumentId: 0, effect: null }, { pitch: "E-3", instrumentId: 1, effect: null }],
+      [new EndNote(), null],
+    ],
+  };
+
+  const events = buildSchedule(song, 140, 0);
+  const ch0 = events.find((e) => e.instrument === 0);
+  const ch1 = events.find((e) => e.instrument === 1);
+
+  assert.equal(ch0.stopTime, ROW_AT_140);
+  assert.equal(ch1.stopTime, undefined);
 });

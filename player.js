@@ -70,6 +70,9 @@ export class Player {
       source.connect(gain);
       gain.connect(this.audioContext.destination);
       source.start(origin + event.time);
+      if (event.stopTime !== undefined) {
+        source.stop(origin + event.stopTime);
+      }
       this.sources.push(source);
     }
   }
