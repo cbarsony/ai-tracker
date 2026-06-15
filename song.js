@@ -6,7 +6,7 @@ class Note {
   }
 }
 
-class EndNote {}
+export class EndNote {}
 
 export const EFFECT_KEY = {
   TEMPO: "T",
@@ -59,4 +59,12 @@ export const song = {
 
 export function addNote(rowId, channelId, pitch, instrumentId) {
   song.pattern[rowId][channelId] = new Note(pitch, instrumentId, null);
+}
+
+export function deleteNote(rowId, channelId) {
+  song.pattern[rowId][channelId] = null;
+}
+
+export function noteOff(rowId, channelId) {
+  song.pattern[rowId][channelId] = new EndNote();
 }

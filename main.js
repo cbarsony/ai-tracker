@@ -1,4 +1,4 @@
-import { song, addNote } from "./song.js";
+import { song, addNote, deleteNote, noteOff, EndNote } from "./song.js";
 import { Player } from "./player.js";
 import { createMachine } from "./statechart.js";
 import { appMachineConfig, EVENTS, ACTIONS, STATES } from "./app-machine.js";
@@ -63,6 +63,17 @@ function render() {
       // Empty cell
       if (!cellData) {
         cell.querySelector(".note").textContent = "---";
+        cell.querySelector(".instrument_character_1").textContent = "-";
+        cell.querySelector(".instrument_character_2").textContent = "-";
+        cell.querySelector(".effect_key").textContent = "-";
+        cell.querySelector(".effect_value_character_1").textContent = "-";
+        cell.querySelector(".effect_value_character_2").textContent = "-";
+        return;
+      }
+
+      // Note-off cell
+      if (cellData instanceof EndNote) {
+        cell.querySelector(".note").textContent = "===";
         cell.querySelector(".instrument_character_1").textContent = "-";
         cell.querySelector(".instrument_character_2").textContent = "-";
         cell.querySelector(".effect_key").textContent = "-";
@@ -222,6 +233,18 @@ const keyHandlers = {
   },
   Space: () => trackerMachine.send(EVENTS.TOGGLE_PLAY),
   Enter: () => trackerMachine.send(EVENTS.TOGGLE_RECORD),
+  Delete: () => {
+    if (trackerMachine.state !== STATES.RECORDING) return;
+    deleteNote(focusRow, cursor.channel);
+    if (focusRow < song.pattern.length - 1) focusRow++;
+    render();
+  },
+  Backspace: () => {
+    if (trackerMachine.state !== STATES.RECORDING) return;
+    noteOff(focusRow, cursor.channel);
+    if (focusRow < song.pattern.length - 1) focusRow++;
+    render();
+  },
 };
 
 document.addEventListener("keydown", (event) => {
