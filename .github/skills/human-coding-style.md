@@ -115,20 +115,9 @@ In this codebase, comments are valuable when they explain the human thinking pro
 - Why this step comes before the next
 - Why a simpler or less elegant approach was chosen
 
-**Also comment when choosing dumber code intentionally:**
+**Also comment when choosing dumber code intentionally.**
 
-```js
-// NOTE: A more concise way to write this would be:
-//   const result = items.filter(isValid).map(transform);
-// We are writing it as a loop instead to make each step visible
-// and to allow easier debugging of individual cases.
-for (const item of items) {
-  if (!isValid(item)) continue;
-  result.push(transform(item));
-}
-```
-
-This kind of comment preserves the knowledge of both approaches.
+This preserves the knowledge of both approaches.
 It tells the reader: "Yes, we know there is a shorter way. We chose not to use it."
 
 ### 6. Re-think the whole architecture before every change
