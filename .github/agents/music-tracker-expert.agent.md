@@ -18,18 +18,6 @@ AI Tracker is an experimental tool for **human-AI musical collaboration**, not a
 - Keep the statechart **config pure** (just description, e.g. `app-machine.js`); put side-effecting action implementations in the wiring/glue layer (`main.js`).
 - **Editor grid uses plain DOM elements, not `<canvas>`.** "Row jumping" with no fancy animation is perfectly fine.
 
-## Song format (object-based)
-
-The song is a **structured object graph**, not strings. The "table" is only the visual metaphor of the grid — storage is plain objects that are easy to render as a table and to describe to an AI.
-
-- `song = { pattern, instruments, bpm }` (in `song.js`); `bpm` defaults to 140.
-- `pattern` is a 2D array indexed `pattern[rowIndex][channelIndex]`. Each cell is either `null` (empty) or a `Note`.
-- `Note { pitch, instrumentId, effect }` — `pitch` is a note string like `"C-4"`, `instrumentId` indexes `instruments`, and `effect` is `null` or an `Effect`.
-- `Effect { key, value }` — `key` is one of `EFFECT_KEY` (`TEMPO` = `"T"`, `VOLUME` = `"V"`); `value` is the parameter (tempo parsed as hex, volume as decimal `00`–`99`).
-- `instruments` is `[{ name, sample }]`, e.g. `{ name: "kick", sample: "samples/kick.wav" }`.
-
-The old fixed-width string format (e.g. `"C-400---"`) is kept only as a reference fixture (`xpattern` in `song.js`) — it is **not** the live format. Note→MIDI conversion for playback lives in `scheduler.js` (`buildSchedule`), which reads `Note` objects directly and emits plain `{ time, midi, instrument, volume? }` events.
-
 ## Grid DOM strategy
 
 The tracker grid uses a **pre-allocation, content-only-update** strategy:
@@ -55,8 +43,6 @@ Why this works here:
 
 The "two clocks" lookahead scheduler (Chris Wilson's "A tale of two clocks") is deliberately **not** used here. It only becomes the right choice if a real requirement appears: editing while playing, live tempo changes that must take effect immediately, looping / cue points / dynamic pattern switching during playback, or peak audio performance becoming a goal (upfront scheduling holds all `AudioBufferSourceNode`s in memory simultaneously, whereas a lookahead window keeps only a small number alive at any time).
 
-**Cold-start sync fix — `waitForAudioClock`.** On a slow or busy machine a freshly created `AudioContext` can keep `currentTime` frozen at 0 for several seconds while the audio rendering thread warms up. If `origin` is captured during that freeze, `setTimeout`-based tick/row callbacks (which run on the wall clock) race ahead and the playhead leads the sound by the warm-up delay. The fix: `player.js` calls `waitForAudioClock(audioContext)` before capturing `origin`. The helper polls `currentTime` via `requestAnimationFrame` until it advances, then resolves — so `origin` is always a real, ticking value, and both clocks are anchored to the same instant. This is a one-shot startup wait, not a polling loop, and does not change the upfront-scheduling model.
-
 ## Planned in-app AI cooperation
 
 The goal is an **in-app chat panel** where the human converses with an AI about the song. The AI does not just receive a pasted table — it receives structured context assembled by the app: the full song pattern, sample descriptions (e.g. "short, punchy kick", "long warm pad"), tempo, and other settings. This richer context, possibly combined with agentic commands, lets the AI give musically informed suggestions and potentially make edits directly.
@@ -70,7 +56,6 @@ The exact mechanism (API, backend, agentic protocol) is intentionally left open 
 ## UI / visual design
 
 - **Hybrid design philosophy:** the UI is minimal and clean at first look. Small, polished effects reveal themselves during use and suggest professionalism — visible only when they matter, never decorative noise.
-- **Focus transitions (planned)** should convey "coming from / arriving somewhere": a brief colorful flash on focus gain that settles to a thin quiet border. This is not implemented yet — the `energy` class on the play button and grid (`index.html`) is a reserved hook with no CSS rules behind it so far. When built, all effect logic must live in CSS only; JS must not touch classes or animations for this.
 
 ## Guardrails
 

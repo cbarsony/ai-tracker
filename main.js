@@ -24,14 +24,15 @@ const instrumentSelect = document.getElementById("instrument");
 const octaveSelect = document.getElementById("octave");
 const gridTableElement = document.getElementById("grid");
 const cursor = { channel: 0, position: 0 };
-let cursorEl = null;
 
+let gridTbodyElement;
+let cursorEl = null;
 let focusRow = 0;
 let selectedInstrument = 0;
 let octave = 4;
 
 function render() {
-  Array.from(gridTableElement.children, (rowElement, rowElementIndex) => {
+  Array.from(gridTbodyElement.children, (rowElement, rowElementIndex) => {
     const currentRow = focusRow - CENTER + rowElementIndex;
 
     // Empty row?
@@ -107,6 +108,7 @@ function render() {
 }
 
 function buildGrid() {
+  const tbody = document.createElement("tbody");
   Array.from({ length: VISIBLE_ROWS }, (_, row) => {
     const tr = document.createElement("tr");
     if (row === CENTER) tr.classList.add("playhead");
@@ -122,8 +124,10 @@ function buildGrid() {
       tr.appendChild(td);
     });
 
-    gridTableElement.appendChild(tr);
+    tbody.appendChild(tr);
   });
+  gridTableElement.appendChild(tbody);
+  gridTbodyElement = tbody;
 }
 
 buildGrid();
@@ -183,10 +187,30 @@ function updateCursor() {
 // Piano-style keyboard: lower row = current octave, upper row = octave + 1.
 // Each value is a semitone offset from C of the current octave.
 const NOTE_KEYS = {
-  KeyZ: 0, KeyS: 1, KeyX: 2, KeyD: 3, KeyC: 4, KeyV: 5,
-  KeyG: 6, KeyB: 7, KeyH: 8, KeyN: 9, KeyJ: 10, KeyM: 11,
-  KeyQ: 12, Digit2: 13, KeyW: 14, Digit3: 15, KeyE: 16, KeyR: 17,
-  Digit5: 18, KeyT: 19, Digit6: 20, KeyY: 21, Digit7: 22, KeyU: 23,
+  KeyZ: 0,
+  KeyS: 1,
+  KeyX: 2,
+  KeyD: 3,
+  KeyC: 4,
+  KeyV: 5,
+  KeyG: 6,
+  KeyB: 7,
+  KeyH: 8,
+  KeyN: 9,
+  KeyJ: 10,
+  KeyM: 11,
+  KeyQ: 12,
+  Digit2: 13,
+  KeyW: 14,
+  Digit3: 15,
+  KeyE: 16,
+  KeyR: 17,
+  Digit5: 18,
+  KeyT: 19,
+  Digit6: 20,
+  KeyY: 21,
+  Digit7: 22,
+  KeyU: 23,
 };
 
 function buildPitch(semitoneOffset) {
@@ -250,6 +274,9 @@ const keyHandlers = {
 document.addEventListener("keydown", (event) => {
   // Let dropdowns keep their own keyboard behavior.
   if (event.target.tagName === "SELECT") return;
+
+  // Let browser/OS shortcuts (Ctrl, Meta, Alt combos) pass through.
+  if (event.ctrlKey || event.metaKey || event.altKey) return;
 
   const handler = keyHandlers[event.code];
   if (handler) {
