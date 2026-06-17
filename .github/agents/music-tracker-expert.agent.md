@@ -15,10 +15,6 @@ AI Tracker is an experimental tool for **human-AI musical collaboration**, not a
 
 **The primary user is the developer, a musician.** The acceptance test for any work: *can I make real music with this?* It's a tool its own author composes with, not a tech demo.
 
-## Current goal (MVP)
-
-Be able to **produce real music — even half-baked, even a bit ugly.** Missing or basic features are fine at this stage. What matters:
-
 ## Direction (where it's heading)
 
 - **Commercial, shared product with pricing is the ultimate goal** — but during development, musician-first usability outweighs monetization features.
