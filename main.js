@@ -1,4 +1,4 @@
-import { song, addNote, deleteNote, noteOff, EndNote } from "./song.js";
+import { song, addNote, deleteNote, noteOff, EndNote, serializeSong, deserializeSong } from "./song.js";
 import { Player } from "./player.js";
 import { createMachine } from "./statechart.js";
 import { appMachineConfig, EVENTS, ACTIONS, STATES } from "./app-machine.js";
@@ -23,6 +23,10 @@ const recordButton = document.getElementById("record");
 const instrumentSelect = document.getElementById("instrument");
 const octaveSelect = document.getElementById("octave");
 const gridTableElement = document.getElementById("grid");
+const songNameInput = document.getElementById("song-name");
+const saveButton = document.getElementById("save");
+const loadButton = document.getElementById("load");
+const fileInput = document.getElementById("file-input");
 const cursor = { channel: 0, position: 0 };
 
 let gridTbodyElement;
@@ -108,14 +112,16 @@ function render() {
 }
 
 function buildGrid() {
+  if (gridTbodyElement) gridTbodyElement.remove();
   const tbody = document.createElement("tbody");
   Array.from({ length: VISIBLE_ROWS }, (_, row) => {
     const tr = document.createElement("tr");
     if (row === CENTER) tr.classList.add("playhead");
     const th = document.createElement("th");
     tr.appendChild(th);
-    Array.from({ length: song.channels }).forEach((instrument, index) => {
+    Array.from({ length: song.channels }, (_, channelIndex) => {
       const td = document.createElement("td");
+      td.dataset.channel = channelIndex;
       FIELDS.map((field) => {
         const s = document.createElement("span");
         s.className = field.className;
@@ -166,11 +172,10 @@ const trackerMachine = createMachine(appMachineConfig, {
   },
 });
 
-const CHANNEL_COUNT = song.channels.length;
 const FIELDS_PER_CHANNEL = FIELDS.length;
 
 function moveCursor(delta) {
-  const total = CHANNEL_COUNT * FIELDS_PER_CHANNEL;
+  const total = song.channels * FIELDS_PER_CHANNEL;
   const flat = cursor.channel * FIELDS_PER_CHANNEL + cursor.position;
   const next = (flat + delta + total) % total;
   cursor.channel = Math.floor(next / FIELDS_PER_CHANNEL);
@@ -279,7 +284,7 @@ const keyHandlers = {
 
 document.addEventListener("keydown", (event) => {
   // Let dropdowns keep their own keyboard behavior.
-  if (event.target.tagName === "SELECT") return;
+  if (event.target.tagName === "SELECT" || event.target.tagName === "INPUT") return;
 
   // Let browser/OS shortcuts (Ctrl, Meta, Alt combos) pass through.
   if (event.ctrlKey || event.metaKey || event.altKey) return;
@@ -335,12 +340,19 @@ recordButton.addEventListener("click", () => {
   gridTableElement.focus();
 });
 
-song.instruments.forEach((instrument, index) => {
-  const option = document.createElement("option");
-  option.value = String(index);
-  option.textContent = instrument.name;
-  instrumentSelect.appendChild(option);
-});
+function rebuildInstrumentSelect() {
+  instrumentSelect.innerHTML = "";
+  song.instruments.forEach((instrument, index) => {
+    const option = document.createElement("option");
+    option.value = String(index);
+    option.textContent = instrument.name;
+    instrumentSelect.appendChild(option);
+  });
+  instrumentSelect.value = "0";
+}
+
+rebuildInstrumentSelect();
+songNameInput.value = song.name;
 instrumentSelect.addEventListener("change", () => {
   selectedInstrument = Number(instrumentSelect.value);
   gridTableElement.focus();
@@ -357,3 +369,51 @@ octaveSelect.addEventListener("change", () => {
   octave = Number(octaveSelect.value);
   gridTableElement.focus();
 });
+
+songNameInput.addEventListener("input", () => {
+  song.name = songNameInput.value;
+});
+
+saveButton.addEventListener("click", () => {
+  if (!window.confirm("Save the current song?")) return;
+  const text = serializeSong();
+  const blob = new Blob([text], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${song.name || "song"}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+loadButton.addEventListener("click", () => {
+  if (!window.confirm("Load a song? Unsaved changes will be lost.")) return;
+  fileInput.click();
+});
+
+fileInput.addEventListener("change", () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const newSong = deserializeSong(e.target.result);
+    applyLoadedSong(newSong);
+    fileInput.value = "";
+  };
+  reader.readAsText(file);
+});
+
+function applyLoadedSong(newSong) {
+  if (trackerMachine.state === STATES.PLAYING) trackerMachine.send({ type: EVENTS.TOGGLE_PLAY });
+  if (trackerMachine.state === STATES.RECORDING) trackerMachine.send({ type: EVENTS.TOGGLE_RECORD });
+  Object.assign(song, newSong);
+  focusRow = 0;
+  cursor.channel = 0;
+  cursor.position = 0;
+  selectedInstrument = 0;
+  buildGrid();
+  rebuildInstrumentSelect();
+  songNameInput.value = song.name;
+  render();
+  updateCursor();
+}

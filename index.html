@@ -59,7 +59,11 @@
       <button id="record">Jam</button>
       <label>Instrument <select id="instrument"></select></label>
       <label>Octave <select id="octave"></select></label>
+      <input id="song-name" type="text" placeholder="Untitled" spellcheck="false">
+      <button id="save">Save</button>
+      <button id="load">Load</button>
     </div>
+    <input id="file-input" type="file" accept=".txt" style="display:none">
     <table id="grid" class="energy" tabindex="0"></table>
     <script type="module" src="main.js"></script>
   </body>

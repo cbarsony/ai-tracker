@@ -72,6 +72,7 @@ const instruments = [
 ];
 
 export const song = {
+  name: "Untitled",
   pattern,
   instruments,
   channels: 4,
@@ -88,4 +89,67 @@ export function deleteNote(rowId, channelId) {
 
 export function noteOff(rowId, channelId) {
   song.pattern[rowId][channelId] = new EndNote();
+}
+
+export function serializeSong() {
+  const instrumentsStr = song.instruments
+    .map((inst) => `${inst.name}=${inst.sample}`)
+    .join(",");
+
+  const lines = [
+    `name:${song.name}`,
+    `bpm:${song.bpm}`,
+    `channels:${song.channels}`,
+    `instruments:${instrumentsStr}`,
+  ];
+
+  for (const row of song.pattern) {
+    const cells = row.map((cell) => {
+      if (!cell) return "-";
+      if (cell instanceof EndNote) return "=";
+      const instStr = String(cell.instrumentId).padStart(2, "0");
+      const effectKey = cell.effect ? cell.effect.key : "-";
+      const effectVal = cell.effect
+        ? String(cell.effect.value).padStart(2, "0")
+        : "--";
+      return `${cell.pitch}${instStr}${effectKey}${effectVal}`;
+    });
+    lines.push(cells.join("|"));
+  }
+
+  return lines.join("\n");
+}
+
+export function deserializeSong(text) {
+  const lines = text.split("\n");
+  let i = 0;
+
+  const name = lines[i++].slice("name:".length);
+  const bpm = Number(lines[i++].slice("bpm:".length));
+  const channels = Number(lines[i++].slice("channels:".length));
+  const instrumentsStr = lines[i++].slice("instruments:".length);
+
+  const instruments = instrumentsStr.split(",").map((part) => {
+    const eq = part.indexOf("=");
+    return { name: part.slice(0, eq), sample: part.slice(eq + 1) };
+  });
+
+  const pattern = [];
+  while (i < lines.length) {
+    const line = lines[i++];
+    if (!line.trim()) continue;
+    const cells = line.split("|").map((cell) => {
+      if (cell === "-") return null;
+      if (cell === "=") return new EndNote();
+      const pitch = cell.slice(0, 3);
+      const instrumentId = Number(cell.slice(3, 5));
+      const effectKey = cell[5];
+      const effectVal = cell.slice(6, 8);
+      const effect = effectKey === "-" ? null : new Effect(effectKey, effectVal);
+      return new Note(pitch, instrumentId, effect);
+    });
+    pattern.push(cells);
+  }
+
+  return { name, bpm, channels, instruments, pattern };
 }
