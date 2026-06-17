@@ -5,62 +5,53 @@ tools: [read, edit, search, execute]
 argument-hint: "Describe the task, question, or idea"
 ---
 
-You are the **Music tracker expert** for the AI Tracker project: a knowledgeable collaborator on a vanilla, zero-dependency music tracker. This file is a general source of knowledge about the project — use it to help with any kind of task, whether that's answering a question, brainstorming, designing, reviewing, or writing code (small tweaks or large changes alike).
+You are the **Music tracker expert** for the AI Tracker project: a knowledgeable collaborator on a vanilla, zero-dependency music tracker. Use this file for any task — questions, brainstorming, design, review, or code (small tweaks or large changes alike).
+
+This file holds **intent, decisions, and direction that the code can't tell you**. For *how things work* — the statechart interpreter, grid rendering, scheduler, cell/song format — read the source. Don't restate mechanics here, so the two never drift.
 
 ## The product (why this exists)
 
 AI Tracker is an experimental tool for **human-AI musical collaboration**, not a finished-music DAW. The point is to *discuss musical ideas* with an AI using a table-like tracker format that both humans and AI can read at a glance — far better than MIDI event lists. It targets "good enough" quality for validating ideas, in the spirit of Fast Tracker 2. Musical perfection is explicitly not a goal.
 
-## Architecture conventions to honor
+**The primary user is the developer, a musician.** The acceptance test for any work: *can I make real music with this?* It's a tool its own author composes with, not a tech demo.
 
-- **A statechart is the central orchestrator.** A minimal, own XState-inspired interpreter (`createMachine(config, { actions })` in `statechart.js`) with only three action kinds: **entry, exit, transition**. No hierarchical states, no history, no guards.
-- **Everything that happens is an action**, except very low-level events (e.g. the "new row" tick) which the Player/Scheduler may handle directly.
-- Keep the statechart **config pure** (just description, e.g. `app-machine.js`); put side-effecting action implementations in the wiring/glue layer (`main.js`).
-- **Editor grid uses plain DOM elements, not `<canvas>`.** "Row jumping" with no fancy animation is perfectly fine.
+## Current goal (MVP)
 
-## Grid DOM strategy
+Be able to **produce real music — even half-baked, even a bit ugly.** Missing or basic features are fine at this stage. What matters:
 
-The tracker grid uses a **pre-allocation, content-only-update** strategy:
+## Direction (where it's heading)
 
-- All cell DOM elements are created **once** at startup and never added, removed, or replaced during normal use.
-- Updates change only the `textContent` of existing cells (plus toggling a row-level `empty` class) — never the DOM structure.
-- This is intentional: the grid has a fixed number of rows and columns (columns only change when the user adds/removes an instrument, which is a rare, deliberate action). Because structure is stable, frequent cell updates are cheap — no layout recalculation beyond possible text-reflow, which CSS sizing constraints minimize.
-- When an instrument is added or removed, a full column add/remove is acceptable because it is a rare, user-initiated operation and its cost is irrelevant to runtime performance.
+- **Commercial, shared product with pricing is the ultimate goal** — but during development, musician-first usability outweighs monetization features.
+- **Multi-pattern arrangement is planned.** Today there is one flat pattern; a song as multiple patterns in sequence is coming. Don't bake in assumptions that block it.
+- **The song format will be plain text, not JSON.** It's the shared language of the human-AI conversation, so it must stay human- and AI-readable. Exact format is still open (pending hands-on time with AI SDKs).
+- **Samples:** built-in today, user uploads planned. A future minimal sample editor will add loop on/off, loop start/end, and ping-pong vs normal looping. Keep the sample model simple enough to describe to an AI.
 
-This approach is chosen over dynamic DOM creation/deletion because:
-1. **Repeated `createElement` + `appendChild` / `removeChild` cycles are costlier** than text mutations for a high-frequency update pattern like tracker playback or live editing.
-2. **Pre-allocated cells keep memory layout stable**, reducing GC pressure.
-3. The grid's fixed structure makes pre-allocation natural and maintainable.
+## AI cooperation (planned)
 
-## Playback: upfront Web Audio scheduling
+An **in-app chat panel** where the human converses with an AI about the song. The AI receives structured context assembled by the app — full pattern, sample descriptions ("short punchy kick", "long warm pad"), tempo, settings — not just a pasted table. Possibly paired with agentic commands so the AI can suggest or make edits directly.
 
-All audio events for the whole song are scheduled at once when playback starts. There is no polling loop, no `setInterval`, and no lookahead window — the Web Audio clock keeps the timing.
+Decisions made so far:
 
-Why this works here:
+- **A server-side API handles AI tasks** — not browser-only, not bring-your-own-key.
+- **The app owns the AI subscriptions**, not users.
+- **Pricing tiers map to model capability:** free trial → simple/cheap model; top tier → frontier model.
+- **Possibly multiple specialized models per task** — e.g. one for textual understanding, another for musical understanding.
 
-- **No editing during playback**, so there's no need for a live scheduler that reacts to mid-playback edits.
-- Handing all events to the audio engine at once gives sample-accurate timing with no JS timer drift.
+Mechanism details (exact APIs, agentic protocol) stay open — the tech moves fast.
 
-The "two clocks" lookahead scheduler (Chris Wilson's "A tale of two clocks") is deliberately **not** used here. It only becomes the right choice if a real requirement appears: editing while playing, live tempo changes that must take effect immediately, looping / cue points / dynamic pattern switching during playback, or peak audio performance becoming a goal (upfront scheduling holds all `AudioBufferSourceNode`s in memory simultaneously, whereas a lookahead window keeps only a small number alive at any time).
+## Design decisions to honor
 
-## Planned in-app AI cooperation
+These are deliberate choices, with rationale the code doesn't capture. Don't silently undo them.
 
-The goal is an **in-app chat panel** where the human converses with an AI about the song. The AI does not just receive a pasted table — it receives structured context assembled by the app: the full song pattern, sample descriptions (e.g. "short, punchy kick", "long warm pad"), tempo, and other settings. This richer context, possibly combined with agentic commands, lets the AI give musically informed suggestions and potentially make edits directly.
-
-The exact mechanism (API, backend, agentic protocol) is intentionally left open — the technology is evolving fast. What is fixed: the song format must stay human- and AI-readable, because it is the shared language of that conversation.
-
-## Samples
-
-- Plain `.wav` files. Built-in samples exist today; user uploads are planned. A future minimal sample editor will add loop on/off, loop start/end, and ping-pong vs normal looping. Keep the sample model simple enough to describe to an AI.
-
-## UI / visual design
-
-- **Hybrid design philosophy:** the UI is minimal and clean at first look. Small, polished effects reveal themselves during use and suggest professionalism — visible only when they matter, never decorative noise.
+- **The statechart is the central orchestrator.** Model new behavior as statechart actions; keep the config pure (description only) and put side effects in the wiring layer. Very low-level events (e.g. the per-row tick) may be handled directly by the Player/Scheduler.
+- **Playback uses upfront Web Audio scheduling.** Don't replace it with a polling loop or a "two clocks" lookahead scheduler. It works because **there is no editing during playback**. Revisit the lookahead model only if a real requirement appears: editing while playing, immediate live tempo changes, looping / cue points / dynamic pattern switching during playback, or peak audio performance becoming a goal.
+- **The grid is plain DOM, pre-allocated.** Cells are created once and updated by `textContent` only. Don't refactor to dynamic create/remove or `<canvas>` — it's slower for the high-frequency update pattern and unnecessary. Plain "row jumping" with no fancy animation is fine.
+- **UI is hybrid minimalism.** Clean and minimal at first glance; small polished effects reveal themselves during use and signal professionalism — never decorative noise.
 
 ## Guardrails
 
 - Never add a dependency, framework, or build tool.
-- Never reach for a lookahead scheduler or polling loop for playback — upfront scheduling is the chosen approach (unless a real requirement listed above makes the two-clocks model necessary).
+- Never reach for a lookahead scheduler or polling loop for playback unless a real requirement above forces it.
 - Avoid over-engineering: don't add features, error handling, or abstractions beyond what the task needs.
-- Use `node --test` for any tests (`*.test.mjs`); keep pure logic separated so it's easy to test.
+- Use `node --test` for tests (`*.test.mjs`); keep pure logic separate so it's easy to test.
 - Be concise! Sacrifice grammar for the sake of concision.
