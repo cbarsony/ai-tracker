@@ -9,13 +9,13 @@ const ROW_AT_70 = 60 / (70 * 4); //  0.21428...
 test("collects notes at the right times from row 0", () => {
   const song = {
     pattern: [
-      ["C-400---", "--------"],
-      ["--------", "--------"],
-      ["E-301---", "--------"],
+      [{ pitch: "C-4", instrumentId: 0, effect: null }, null],
+      [null, null],
+      [{ pitch: "E-3", instrumentId: 1, effect: null }, null],
     ],
   };
 
-  const events = buildSchedule(song, 140, 0);
+  const events = buildSchedule(song, 140, 0).filter(e => e.midi !== undefined);
 
   assert.deepEqual(events, [
     { time: 0, midi: 60, instrument: 0 },
@@ -26,13 +26,13 @@ test("collects notes at the right times from row 0", () => {
 test("startRow normalizes the first collected row to t = 0", () => {
   const song = {
     pattern: [
-      ["C-400---"],
-      ["C-401---"],
-      ["C-402---"],
+      [{ pitch: "C-4", instrumentId: 0, effect: null }],
+      [{ pitch: "C-4", instrumentId: 1, effect: null }],
+      [{ pitch: "C-4", instrumentId: 2, effect: null }],
     ],
   };
 
-  const events = buildSchedule(song, 140, 1);
+  const events = buildSchedule(song, 140, 1).filter(e => e.midi !== undefined);
 
   assert.deepEqual(events, [
     { time: 0, midi: 60, instrument: 1 },
@@ -43,13 +43,13 @@ test("startRow normalizes the first collected row to t = 0", () => {
 test("a tempo change before startRow still counts", () => {
   const song = {
     pattern: [
-      ["C-400T46"], // 0x46 = 70 BPM
-      ["C-401---"],
-      ["C-402---"],
+      [{ pitch: "C-4", instrumentId: 0, effect: { key: "T", value: "46" } }], // 0x46 = 70 BPM
+      [{ pitch: "C-4", instrumentId: 1, effect: null }],
+      [{ pitch: "C-4", instrumentId: 2, effect: null }],
     ],
   };
 
-  const events = buildSchedule(song, 140, 1);
+  const events = buildSchedule(song, 140, 1).filter(e => e.midi !== undefined);
 
   // Row 1 is t=0 at 70 BPM, so row 2 is one slow row later.
   assert.deepEqual(events, [
@@ -61,13 +61,13 @@ test("a tempo change before startRow still counts", () => {
 test("a tempo change applies on its own row", () => {
   const song = {
     pattern: [
-      ["C-400---"],
-      ["C-401T46"], // slows down starting with this row's duration
-      ["C-402---"],
+      [{ pitch: "C-4", instrumentId: 0, effect: null }],
+      [{ pitch: "C-4", instrumentId: 1, effect: { key: "T", value: "46" } }], // slows down starting with this row's duration
+      [{ pitch: "C-4", instrumentId: 2, effect: null }],
     ],
   };
 
-  const events = buildSchedule(song, 140, 0);
+  const events = buildSchedule(song, 140, 0).filter(e => e.midi !== undefined);
 
   assert.deepEqual(events, [
     { time: 0, midi: 60, instrument: 0 },
