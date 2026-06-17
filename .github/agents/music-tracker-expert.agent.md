@@ -63,3 +63,4 @@ The exact mechanism (API, backend, agentic protocol) is intentionally left open 
 - Never reach for a lookahead scheduler or polling loop for playback — upfront scheduling is the chosen approach (unless a real requirement listed above makes the two-clocks model necessary).
 - Avoid over-engineering: don't add features, error handling, or abstractions beyond what the task needs.
 - Use `node --test` for any tests (`*.test.mjs`); keep pure logic separated so it's easy to test.
+- Be concise! Sacrifice grammar for the sake of concision.

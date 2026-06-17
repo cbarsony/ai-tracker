@@ -29,6 +29,21 @@ export class Player {
     this.onSongEnd = onSongEnd;
   }
 
+  // Returns a hard-limiter node wired to the destination, created once per
+  // AudioContext. Prevents clipping when multiple voices play simultaneously.
+  getLimiter() {
+    if (!this.limiter) {
+      this.limiter = this.audioContext.createDynamicsCompressor();
+      this.limiter.threshold.value = -3;  // dB — start limiting just below 0
+      this.limiter.knee.value = 0;        // hard knee
+      this.limiter.ratio.value = 20;      // near-brick-wall
+      this.limiter.attack.value = 0.001;  // 1 ms
+      this.limiter.release.value = 0.1;   // 100 ms
+      this.limiter.connect(this.audioContext.destination);
+    }
+    return this.limiter;
+  }
+
   async play(fromRow = 0) {
     if (!this.audioContext) this.audioContext = new AudioContext();
     if (!this.buffers) this.buffers = await this.loadSamples();
@@ -68,7 +83,7 @@ export class Player {
       const gain = this.audioContext.createGain();
       gain.gain.value = event.volume !== undefined ? event.volume / 100 : 1;
       source.connect(gain);
-      gain.connect(this.audioContext.destination);
+      gain.connect(this.getLimiter());
       source.start(origin + event.time);
       if (event.stopTime !== undefined) {
         source.stop(origin + event.stopTime);
@@ -87,9 +102,41 @@ export class Player {
     this.sources = [];
   }
 
-  // Fire-and-forget audition of a single note. Bypasses the scheduler and is
-  // not tracked in `this.sources`, so it rings out naturally and is never cut
-  // by `stop()`. Lazily boots the audio context so it works before first play.
+  // Polyphonic jam preview: up to 4 simultaneous voices, keyed by event.code.
+  // If a 5th key is pressed the oldest voice is stolen. Lazily boots the audio
+  // context so it works before first play.
+  async startPreview(code, pitch, instrumentId) {
+    if (!this.audioContext) this.audioContext = new AudioContext();
+    if (!this.buffers) this.buffers = await this.loadSamples();
+    await this.audioContext.resume();
+
+    // Voice steal: evict oldest entry when at the 4-voice limit.
+    if (!this.jamVoices) this.jamVoices = new Map();
+    if (this.jamVoices.size >= 4) {
+      const [oldestCode, oldestSource] = this.jamVoices.entries().next().value;
+      oldestSource.stop();
+      this.jamVoices.delete(oldestCode);
+    }
+
+    const source = this.audioContext.createBufferSource();
+    source.buffer = this.buffers[instrumentId];
+    source.playbackRate.value = 2 ** ((pitchToMidi(pitch) - ROOT_NOTE) / 12);
+    source.connect(this.getLimiter());
+    source.start();
+    source.onended = () => this.jamVoices.delete(code);
+    this.jamVoices.set(code, source);
+  }
+
+  stopPreview(code) {
+    if (!this.jamVoices) return;
+    const source = this.jamVoices.get(code);
+    if (source) {
+      source.stop();
+      this.jamVoices.delete(code);
+    }
+  }
+
+  // Kept for backwards compatibility with any callers outside jamming.
   async previewNote(pitch, instrumentId) {
     if (!this.audioContext) this.audioContext = new AudioContext();
     if (!this.buffers) this.buffers = await this.loadSamples();
@@ -98,7 +145,7 @@ export class Player {
     const source = this.audioContext.createBufferSource();
     source.buffer = this.buffers[instrumentId];
     source.playbackRate.value = 2 ** ((pitchToMidi(pitch) - ROOT_NOTE) / 12);
-    source.connect(this.audioContext.destination);
+    source.connect(this.getLimiter());
     source.start();
   }
 

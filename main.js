@@ -222,7 +222,11 @@ function buildPitch(semitoneOffset) {
 
 function handleNoteKey(code) {
   const pitch = buildPitch(NOTE_KEYS[code]);
-  player.previewNote(pitch, selectedInstrument);
+  if (trackerMachine.state === STATES.JAMMING) {
+    player.startPreview(code, pitch, selectedInstrument);
+  } else {
+    player.previewNote(pitch, selectedInstrument);
+  }
   if (trackerMachine.state === STATES.RECORDING) {
     addNote(focusRow, cursor.channel, pitch, selectedInstrument);
     if (focusRow < song.pattern.length - 1) focusRow++;
@@ -295,6 +299,12 @@ document.addEventListener("keydown", (event) => {
   ) {
     event.preventDefault();
     handleNoteKey(event.code);
+  }
+});
+
+document.addEventListener("keyup", (event) => {
+  if (trackerMachine.state === STATES.JAMMING && event.code in NOTE_KEYS) {
+    player.stopPreview(event.code);
   }
 });
 
