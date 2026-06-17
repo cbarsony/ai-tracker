@@ -199,6 +199,7 @@ const NOTE_KEYS = {
   KeyN: 9,
   KeyJ: 10,
   KeyM: 11,
+  Comma: 12,
   KeyQ: 12,
   Digit2: 13,
   KeyW: 14,
@@ -211,6 +212,7 @@ const NOTE_KEYS = {
   KeyY: 21,
   Digit7: 22,
   KeyU: 23,
+  KeyI: 24,
 };
 
 function buildPitch(semitoneOffset) {
