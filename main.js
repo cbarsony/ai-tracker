@@ -114,7 +114,7 @@ function buildGrid() {
     if (row === CENTER) tr.classList.add("playhead");
     const th = document.createElement("th");
     tr.appendChild(th);
-    song.instruments.forEach((instrument, index) => {
+    Array.from({ length: song.channels }).forEach((instrument, index) => {
       const td = document.createElement("td");
       FIELDS.map((field) => {
         const s = document.createElement("span");
@@ -166,7 +166,7 @@ const trackerMachine = createMachine(appMachineConfig, {
   },
 });
 
-const CHANNEL_COUNT = song.instruments.length;
+const CHANNEL_COUNT = song.channels.length;
 const FIELDS_PER_CHANNEL = FIELDS.length;
 
 function moveCursor(delta) {
